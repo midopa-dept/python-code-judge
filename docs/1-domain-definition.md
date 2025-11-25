@@ -164,7 +164,7 @@ Python Judge는 Python 알고리즘 코딩 테스트를 온라인으로 수행�
     - 시스템: os, subprocess, multiprocessing, threading
     - 네트워크: socket, urllib, http, requests
     - 파일 시스템: pathlib (일부), shutil, tempfile
-    - 동적 실행: eval, exec, compile, __import__
+    - 동적 실행: eval, exec, compile, **import**
     - 기타: sys (일부 함수만 허용)
   - **파일 I/O**: open() 함수 사용 시 임시 디렉토리 내부만 허용
   - **네트워크 접근**: 전면 차단 (import 단계에서 차단)
@@ -248,7 +248,7 @@ Python Judge는 Python 알고리즘 코딩 테스트를 온라인으로 수행�
   - Python 버전
   - 허용 모듈 목록 (화이트리스트)
   - 금지 모듈 목록 (블랙리스트: os, subprocess, socket, sys 등)
-  - 금지 함수 목록 (eval, exec, compile, __import__ 등)
+  - 금지 함수 목록 (eval, exec, compile, **import** 등)
   - CPU 시간 제한 (초)
   - 메모리 제한 (MB)
   - 실행 타임아웃 (초)
@@ -266,7 +266,7 @@ Python Judge는 Python 알고리즘 코딩 테스트를 온라인으로 수행�
   - **정적 분석**
     - AST(Abstract Syntax Tree) 파싱으로 금지 모듈/함수 사용 검증
     - import 문 화이트리스트 검증
-    - 위험 패턴 탐지 (eval, exec, __import__, open 등)
+    - 위험 패턴 탐지 (eval, exec, **import**, open 등)
   - **프로세스 격리**
     - subprocess.run으로 별도 프로세스 실행
     - timeout 파라미터로 실행 시간 제한
