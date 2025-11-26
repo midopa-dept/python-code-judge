@@ -15,6 +15,7 @@ import problemRoutes from './modules/problems/routes/problemRoutes.js';
 import categoryRoutes from './modules/problems/routes/categoryRoutes.js';
 import sessionRoutes from './modules/sessions/routes/sessionRoutes.js';
 import auditRoutes from './modules/audit/routes/auditRoutes.js';
+import submissionRoutes from './modules/submissions/routes/submissionRoutes.js';
 
 const app = express();
 
@@ -49,6 +50,7 @@ app.use('/api', problemRoutes);
 app.use('/api', categoryRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/audit-logs', auditRoutes);
+app.use('/api', submissionRoutes);
 
 // 404 핸들러
 app.use(notFoundHandler);
