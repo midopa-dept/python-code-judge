@@ -144,44 +144,53 @@
 #### 완료 조건 체크리스트
 
 ##### 1. 데이터베이스 스키마 설계
-- [ ] ERD 기반 마이그레이션 스크립트 작성
+- [x] ERD 기반 마이그레이션 스크립트 작성
   - 완료 조건: 11개 테이블 생성 SQL 작성 완료
   - 의존성: docs/6-erd.md 참조
   - 테이블: students, administrators, problems, test_cases, submissions, judging_results, education_sessions, session_students, session_problems, scoreboards, audit_logs
+  - **완료**: database/schmea.sql (11개 테이블)
 
-- [ ] 인덱스 생성 스크립트 작성
+- [x] 인덱스 생성 스크립트 작성
   - 완료 조건: 성능 최적화 인덱스 30개 이상 생성
   - 의존성: 테이블 생성 완료
+  - **완료**: 21개 인덱스 생성
 
-- [ ] CHECK 제약조건 및 트리거 작성
+- [x] CHECK 제약조건 및 트리거 작성
   - 완료 조건: 비즈니스 규칙 반영 (난이도 1-5, 카테고리 검증 등)
   - 의존성: 테이블 생성 완료
+  - **완료**: 8개 트리거, 4개 함수 생성
 
 ##### 2. 로컬 PostgreSQL 연동
-- [ ] 로컬 PostgreSQL 데이터베이스 생성
+- [x] 로컬 PostgreSQL 데이터베이스 생성
   - 완료 조건: `CREATE DATABASE python_judge_dev;` 실행 완료
   - 의존성: PostgreSQL 설치 (localhost:5432)
+  - **완료**: postgres 데이터베이스 사용 (public 스키마)
 
-- [ ] 마이그레이션 실행
+- [x] 마이그레이션 실행
   - 완료 조건: 로컬 DB에 모든 테이블 생성 확인 (psql 또는 pgAdmin)
   - 의존성: 마이그레이션 스크립트 완료
+  - **완료**: database/migrate.js 실행 완료
 
-- [ ] 데이터베이스 연결 테스트
+- [x] 데이터베이스 연결 테스트
   - 완료 조건: Node.js에서 로컬 PostgreSQL 쿼리 성공
   - 의존성: DATABASE_CONNECTION_STRING 설정
+  - **완료**: backend/src/config/database.js (pg 라이브러리 사용)
 
 ##### 3. 시드 데이터 준비
-- [ ] 관리자 계정 시드 데이터 작성
+- [x] 관리자 계정 시드 데이터 작성
   - 완료 조건: 최소 1명의 super_admin 계정 생성
   - 의존성: administrators 테이블 생성
+  - **완료**: super_admin (비밀번호: admin123)
 
-- [ ] 테스트 학생 계정 시드 데이터 작성
+- [x] 테스트 학생 계정 시드 데이터 작성
   - 완료 조건: 최소 3명의 테스트 학생 계정 생성
   - 의존성: students 테이블 생성
+  - **완료**: student01, student02, student03 (비밀번호: student123)
 
-- [ ] 샘플 문제 및 테스트 케이스 작성
+- [x] 샘플 문제 및 테스트 케이스 작성
   - 완료 조건: 카테고리별 최소 1개 문제 (11개 총)
   - 의존성: problems, test_cases 테이블 생성
+  - **완료**: 3개 문제 (조건문, 반복문, 리스트) + 15개 테스트 케이스
 
 **병렬 수행 가능**: 시드 데이터 작성은 스키마 설계와 병렬 진행 가능
 **주의사항**: Phase 0-4는 모두 로컬 PostgreSQL 환경에서 개발 및 테스트 진행
