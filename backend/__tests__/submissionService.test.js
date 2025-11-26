@@ -11,19 +11,35 @@ const baseProblemRow = {
   memory_limit: 256,
 };
 
-const createClientMock = (handlers = {}) => {
-  const query = jest.fn(async (sql) => {
-    if (sql.includes('FROM problems')) return { rows: [handlers.problemRow || baseProblemRow] };
-    if (sql.includes('submitted_at')) return { rows: handlers.duplicateRows || [] };
-    if (sql.includes('INSERT INTO submissions')) return { rows: [{ id: handlers.insertId || 99 }] };
-    return { rows: [] };
-  });
+  const createClientMock = (handlers = {}) => {
+    const query = jest.fn(async (sql, params) => {
+      const upper = sql.trim().toUpperCase();
+      if (upper === 'BEGIN' || upper === 'COMMIT' || upper === 'ROLLBACK') return { rows: [] };
 
-  return {
-    query,
-    release: jest.fn(),
+      if (sql.includes('FROM problems')) return { rows: [handlers.problemRow || baseProblemRow] };
+      if (sql.includes('SELECT id, student_id, session_id, problem_id, submitted_at')) {
+        return {
+          rows: [
+            {
+              id: handlers.metaId || handlers.insertId || 99,
+              student_id: handlers.studentId || 1,
+              session_id: handlers.sessionId || null,
+              problem_id: handlers.problemId || 1,
+              submitted_at: handlers.submittedAt || '2025-01-01T00:00:00Z',
+            },
+          ],
+        };
+      }
+      if (sql.includes('submitted_at')) return { rows: handlers.duplicateRows || [] };
+      if (sql.includes('INSERT INTO submissions')) return { rows: [{ id: handlers.insertId || 99 }] };
+      return { rows: [] };
+    });
+
+    return {
+      query,
+      release: jest.fn(),
+    };
   };
-};
 
 describe('extractSubmissionCode', () => {
   test('본문 코드 문자열을 반환한다', () => {
@@ -157,10 +173,8 @@ describe('submissionService.submitCode', () => {
     await new Promise((resolve) => setImmediate(resolve));
 
     expect(judge).toHaveBeenCalled();
-    expect(runQuery).toHaveBeenCalledWith(
-      expect.stringContaining('UPDATE submissions'),
-      expect.arrayContaining(['AC'])
-    );
+    const clientUpdates = client.query.mock.calls.filter(([sql]) => sql.includes('UPDATE submissions'));
+    expect(clientUpdates.some(([, params]) => params?.includes('AC'))).toBe(true);
   });
 });
 
@@ -292,5 +306,98 @@ describe('submissionService.getSubmissionResult', () => {
     expect(detail.passedCases).toBe(1);
     expect(detail.totalCases).toBe(3);
     expect(detail.problemTitle).toBe('문제4');
+  });
+});
+
+describe('submissionService.applyJudgeResult', () => {
+  const problemMeta = { time_limit: 5, memory_limit: 256 };
+  const baseSubmission = {
+    id: 1,
+    student_id: 10,
+    session_id: 99,
+    problem_id: 5,
+    submitted_at: '2025-01-01T00:00:00Z',
+  };
+
+  const buildClient = (overrides = {}) => {
+    const rankingRows = overrides.rankingRows || [
+      { student_id: 10, score: 2, first_ac_time: '2025-01-01T00:00:00Z' },
+      { student_id: 11, score: 1, first_ac_time: '2025-01-02T00:00:00Z' },
+    ];
+
+    const query = jest.fn(async (sql, params) => {
+      if (sql.trim().toUpperCase() === 'BEGIN' || sql.trim().toUpperCase() === 'COMMIT' || sql.trim().toUpperCase() === 'ROLLBACK') {
+        return { rows: [] };
+      }
+
+      if (sql.includes('FROM submissions') && sql.includes('WHERE id =')) {
+        return { rows: [overrides.meta || baseSubmission] };
+      }
+
+      if (sql.includes('FROM submissions') && sql.includes("status = 'AC'") && sql.includes('id <>')) {
+        return { rows: overrides.priorAcRows || [] };
+      }
+
+      if (sql.includes('INSERT INTO scoreboards')) {
+        return { rows: [] };
+      }
+
+      if (sql.includes('FROM scoreboards sb')) {
+        return { rows: rankingRows };
+      }
+
+      if (sql.includes('UPDATE scoreboards SET rank')) {
+        return { rows: [] };
+      }
+
+      if (sql.includes('UPDATE submissions')) {
+        return { rows: [] };
+      }
+
+      return { rows: [] };
+    });
+
+    return {
+      query,
+      release: jest.fn(),
+    };
+  };
+
+  test('AC 결과는 스코어보드를 갱신하고 순위를 재계산한다', async () => {
+    const client = buildClient();
+    const service = createSubmissionService({
+      getDbClient: async () => client,
+    });
+
+    await service.applyJudgeResult(1, { status: 'AC', passedCount: 1, totalCount: 1 }, problemMeta);
+
+    expect(client.query).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO scoreboards'), expect.any(Array));
+    const rankUpdates = client.query.mock.calls.filter(([sql]) => sql.includes('UPDATE scoreboards'));
+    expect(rankUpdates).toHaveLength(2);
+    expect(rankUpdates[0][1][0]).toBe(1);
+  });
+
+  test('이미 동일 문제를 AC 했다면 스코어보드를 건드리지 않는다', async () => {
+    const client = buildClient({ priorAcRows: [{ exists: 1 }] });
+    const service = createSubmissionService({
+      getDbClient: async () => client,
+    });
+
+    await service.applyJudgeResult(1, { status: 'AC', passedCount: 1, totalCount: 1 }, problemMeta);
+
+    expect(client.query).not.toHaveBeenCalledWith(expect.stringContaining('INSERT INTO scoreboards'), expect.any(Array));
+  });
+
+  test('AC가 아닌 결과는 스코어보드를 갱신하지 않는다', async () => {
+    const client = buildClient();
+    const service = createSubmissionService({
+      getDbClient: async () => client,
+    });
+
+    await service.applyJudgeResult(1, { status: 'WA', passedCount: 0, totalCount: 1 }, problemMeta);
+
+    expect(client.query).not.toHaveBeenCalledWith(expect.stringContaining('INSERT INTO scoreboards'), expect.any(Array));
+    const rankUpdates = client.query.mock.calls.filter(([sql]) => sql.includes('UPDATE scoreboards'));
+    expect(rankUpdates).toHaveLength(0);
   });
 });

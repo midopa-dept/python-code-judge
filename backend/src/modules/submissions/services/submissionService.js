@@ -1,4 +1,4 @@
-import { getClient, query as defaultQuery } from '../../../config/database.js';
+﻿import { getClient, query as defaultQuery } from '../../../config/database.js';
 import { analyzePythonCode as defaultAnalyze } from '../../../shared/utils/pythonAstValidator.js';
 import { judgeSubmission as defaultJudge } from '../../../shared/utils/judgeRunner.js';
 import logger from '../../../shared/utils/logger.js';
@@ -17,22 +17,22 @@ const buildAstErrorMessage = (astResult) => {
       .map((e) => e.target)
       .join(', ');
     if (bannedModules) {
-      return `금지된 모듈 사용 감지: ${bannedModules}`;
+      return `湲덉???紐⑤뱢 ?ъ슜 媛먯?: ${bannedModules}`;
     }
     const bannedFunctions = astResult.errors
       .filter((e) => e.type === 'BANNED_FUNCTION')
       .map((e) => e.target)
       .join(', ');
     if (bannedFunctions) {
-      return `금지된 함수 사용 감지: ${bannedFunctions}`;
+      return `湲덉????⑥닔 ?ъ슜 媛먯?: ${bannedFunctions}`;
     }
-    return 'AST 검증에 실패했습니다.';
+    return 'AST 寃利앹뿉 ?ㅽ뙣?덉뒿?덈떎.';
   }
-  return 'AST 검증에 실패했습니다.';
+  return 'AST 寃利앹뿉 ?ㅽ뙣?덉뒿?덈떎.';
 };
 
 /**
- * 의존성을 주입 가능한 제출 서비스 생성
+ * ?섏〈?깆쓣 二쇱엯 媛?ν븳 ?쒖텧 ?쒕퉬???앹꽦
  */
 export const createSubmissionService = (deps = {}) => {
   const {
@@ -54,13 +54,13 @@ export const createSubmissionService = (deps = {}) => {
     );
 
     if (result.rows.length === 0) {
-      throw new NotFoundError('문제를 찾을 수 없습니다.');
+      throw new NotFoundError('臾몄젣瑜?李얠쓣 ???놁뒿?덈떎.');
     }
 
     const problem = result.rows[0];
 
     if (userRole === 'student' && problem.visibility !== 'public') {
-      throw new ForbiddenError('비공개 문제는 제출할 수 없습니다.');
+      throw new ForbiddenError('鍮꾧났媛?臾몄젣???쒖텧?????놁뒿?덈떎.');
     }
 
     return problem;
@@ -80,7 +80,7 @@ export const createSubmissionService = (deps = {}) => {
     );
 
     if (duplicate.rows.length > 0) {
-      throw new AppError('동일 문제는 5초 이내에 다시 제출할 수 없습니다.', 429, 'DUPLICATE_SUBMISSION');
+      throw new AppError('?숈씪 臾몄젣??5珥??대궡???ㅼ떆 ?쒖텧?????놁뒿?덈떎.', 429, 'DUPLICATE_SUBMISSION');
     }
   };
 
@@ -145,6 +145,125 @@ export const createSubmissionService = (deps = {}) => {
     );
   };
 
+  const updateSubmissionResultTx = async (
+    executor,
+    submissionId,
+    result,
+    problemTimeLimit,
+    problemMemoryLimit
+  ) => {
+    await executor(
+      `
+      UPDATE submissions
+      SET
+        status = $1,
+        execution_time = $2,
+        memory_usage = $3,
+        error_message = $4,
+        passed_cases = $5,
+        total_cases = $6,
+        judged_at = NOW()
+      WHERE id = $7
+    `,
+      [
+        result.status,
+        result.maxTimeMs ?? problemTimeLimit * 1000,
+        result.maxMemoryBytes ?? problemMemoryLimit * 1024 * 1024,
+        result.errorMessage || null,
+        result.passedCount ?? 0,
+        result.totalCount ?? 0,
+        submissionId,
+      ]
+    );
+  };
+
+  const fetchSubmissionMeta = async (executor, submissionId) => {
+    const res = await executor(
+      `
+      SELECT id, student_id, session_id, problem_id, submitted_at
+      FROM submissions
+      WHERE id = $1
+    `,
+      [submissionId]
+    );
+
+    if (res.rows.length === 0) {
+      throw new NotFoundError('?쒖텧??李얠쓣 ???놁뒿?덈떎.');
+    }
+
+    return res.rows[0];
+  };
+
+  const updateScoreboardForAc = async (executor, meta) => {
+    const { session_id: sessionId, student_id: studentId, problem_id: problemId, id: submissionId } =
+      meta;
+
+    if (!sessionId) return;
+
+    const solvedBefore = await executor(
+      `
+      SELECT 1
+      FROM submissions
+      WHERE student_id = $1
+        AND problem_id = $2
+        AND session_id = $3
+        AND status = 'AC'
+        AND id <> $4
+      LIMIT 1
+    `,
+      [studentId, problemId, sessionId, submissionId]
+    );
+
+    if (solvedBefore.rows.length > 0) {
+      return;
+    }
+
+    await executor(
+      `
+      INSERT INTO scoreboards (session_id, student_id, score, solved_count, rank, updated_at)
+      VALUES ($1, $2, 1, 1, 1, NOW())
+      ON CONFLICT (session_id, student_id)
+      DO UPDATE SET
+        score = score + 1,
+        solved_count = solved_count + 1,
+        updated_at = NOW()
+    `,
+      [sessionId, studentId]
+    );
+
+    const ranking = await executor(
+      `
+      SELECT
+        sb.student_id,
+        sb.score,
+        COALESCE(ac.first_ac_time, NOW()) as first_ac_time
+      FROM scoreboards sb
+      LEFT JOIN (
+        SELECT student_id, MIN(submitted_at) as first_ac_time
+        FROM submissions
+        WHERE session_id = $1 AND status = 'AC'
+        GROUP BY student_id
+      ) ac ON ac.student_id = sb.student_id
+      WHERE sb.session_id = $1
+      ORDER BY sb.score DESC, ac.first_ac_time ASC, sb.student_id ASC
+    `,
+      [sessionId]
+    );
+
+    let rank = 1;
+    for (const row of ranking.rows) {
+      await executor(
+        `
+        UPDATE scoreboards
+        SET rank = $1, updated_at = NOW()
+        WHERE session_id = $2 AND student_id = $3
+      `,
+        [rank, sessionId, row.student_id]
+      );
+      rank += 1;
+    }
+  };
+
   const runAsyncJudge = async (submissionId, code, problem, pythonVersion) => {
     try {
       const testCaseResult = await runQuery(
@@ -172,15 +291,48 @@ export const createSubmissionService = (deps = {}) => {
         pythonExecutable: pythonVersion,
       });
 
-      await updateSubmissionResult(submissionId, judgeResult, problem.time_limit, problem.memory_limit);
+      await applyJudgeResult(submissionId, judgeResult, problem);
     } catch (error) {
       log.error('채점 비동기 처리 실패', { submissionId, error: error.message });
-      await updateSubmissionResult(
+      try {
+        await updateSubmissionResult(
+          submissionId,
+          { status: 'RE', errorMessage: error.message, passedCount: 0, totalCount: 0 },
+          problem.time_limit,
+          problem.memory_limit
+        );
+      } catch (updateError) {
+        log.error('채점 실패 상태 반영 오류', { submissionId, error: updateError.message });
+      }
+    }
+  };
+
+  const applyJudgeResult = async (submissionId, judgeResult, problem) => {
+    const client = await getDbClient();
+    try {
+      await client.query('BEGIN');
+
+      const meta = await fetchSubmissionMeta(client.query.bind(client), submissionId);
+
+      await updateSubmissionResultTx(
+        client.query.bind(client),
         submissionId,
-        { status: 'RE', errorMessage: error.message, passedCount: 0, totalCount: 0 },
+        judgeResult,
         problem.time_limit,
         problem.memory_limit
       );
+
+      if (judgeResult.status === 'AC') {
+        await updateScoreboardForAc(client.query.bind(client), meta);
+      }
+
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      log.error('채점 결과 반영 실패', { submissionId, error: error.message });
+      throw error;
+    } finally {
+      client.release();
     }
   };
 
@@ -200,7 +352,7 @@ export const createSubmissionService = (deps = {}) => {
     const params = [];
     let paramCount = 0;
 
-    // 권한: 학생은 본인 제출만, 관리자는 선택적으로 studentId 필터 적용
+    // 沅뚰븳: ?숈깮? 蹂몄씤 ?쒖텧留? 愿由ъ옄???좏깮?곸쑝濡?studentId ?꾪꽣 ?곸슜
     if (requester.role === 'student') {
       paramCount++;
       conditions.push(`s.student_id = $${paramCount}`);
@@ -225,7 +377,7 @@ export const createSubmissionService = (deps = {}) => {
 
     if (filters.status) {
       if (!ALLOWED_STATUSES.includes(filters.status)) {
-        throw new ValidationError('지원하지 않는 채점 상태입니다.');
+        throw new ValidationError('吏?먰븯吏 ?딅뒗 梨꾩젏 ?곹깭?낅땲??');
       }
       paramCount++;
       conditions.push(`s.status = $${paramCount}`);
@@ -321,13 +473,13 @@ export const createSubmissionService = (deps = {}) => {
     const submissionResult = await runQuery(resultQuery, [submissionId]);
 
     if (submissionResult.rows.length === 0) {
-      throw new NotFoundError('제출을 찾을 수 없습니다.');
+      throw new NotFoundError('?쒖텧??李얠쓣 ???놁뒿?덈떎.');
     }
 
     const submission = submissionResult.rows[0];
 
     if (requester.role === 'student' && requester.id !== submission.student_id) {
-      throw new ForbiddenError('본인 제출만 조회할 수 있습니다.');
+      throw new ForbiddenError('蹂몄씤 ?쒖텧留?議고쉶?????덉뒿?덈떎.');
     }
 
     return {
@@ -349,28 +501,28 @@ export const createSubmissionService = (deps = {}) => {
 
   const submitCode = async ({ studentId, userRole, problemId, sessionId, code, pythonVersion }) => {
     if (!studentId) {
-      throw new ValidationError('사용자 정보가 필요합니다.');
+      throw new ValidationError('?ъ슜???뺣낫媛 ?꾩슂?⑸땲??');
     }
 
     const parsedProblemId = parseInt(problemId, 10);
     if (!parsedProblemId) {
-      throw new ValidationError('problemId는 숫자여야 합니다.');
+      throw new ValidationError('problemId???レ옄?ъ빞 ?⑸땲??');
     }
 
     const parsedSessionId = sessionId ? parseInt(sessionId, 10) : null;
 
     const version = pythonVersion || '3.10';
     if (!SUPPORTED_PYTHON_VERSIONS.includes(version)) {
-      throw new ValidationError('지원하지 않는 Python 버전입니다.');
+      throw new ValidationError('吏?먰븯吏 ?딅뒗 Python 踰꾩쟾?낅땲??');
     }
 
     if (typeof code !== 'string' || code.trim().length === 0) {
-      throw new ValidationError('제출할 코드가 비어 있습니다.');
+      throw new ValidationError('?쒖텧??肄붾뱶媛 鍮꾩뼱 ?덉뒿?덈떎.');
     }
 
     const codeSize = Buffer.byteLength(code, 'utf8');
     if (codeSize > MAX_CODE_BYTES) {
-      throw new AppError('코드 크기가 64KB를 초과했습니다.', 413, 'CODE_SIZE_EXCEEDED');
+      throw new AppError('肄붾뱶 ?ш린媛 64KB瑜?珥덇낵?덉뒿?덈떎.', 413, 'CODE_SIZE_EXCEEDED');
     }
 
     const client = await getDbClient();
@@ -415,7 +567,7 @@ export const createSubmissionService = (deps = {}) => {
 
       await client.query('COMMIT');
 
-      // 비동기 채점 시작 (응답은 즉시 반환)
+      // 鍮꾨룞湲?梨꾩젏 ?쒖옉 (?묐떟? 利됱떆 諛섑솚)
       setImmediate(() => {
         runAsyncJudge(submissionId, code, problem, version);
       });
@@ -423,7 +575,7 @@ export const createSubmissionService = (deps = {}) => {
       return {
         submissionId,
         status: 'pending',
-        message: '제출이 접수되었습니다. 채점을 준비합니다.',
+        message: '?쒖텧???묒닔?섏뿀?듬땲?? 梨꾩젏??以鍮꾪빀?덈떎.',
       };
     } catch (error) {
       await client.query('ROLLBACK');
@@ -437,9 +589,12 @@ export const createSubmissionService = (deps = {}) => {
     getSubmissions,
     getSubmissionResult,
     submitCode,
+    applyJudgeResult,
   };
 };
 
 export const submissionService = createSubmissionService();
 
 export default submissionService;
+
+
