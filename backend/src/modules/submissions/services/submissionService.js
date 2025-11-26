@@ -198,6 +198,7 @@ export const createSubmissionService = (deps = {}) => {
     const { session_id: sessionId, student_id: studentId, problem_id: problemId, id: submissionId } =
       meta;
 
+    // 세션이 없는 제출은 스코어보드 대상이 아님
     if (!sessionId) return;
 
     const solvedBefore = await executor(
@@ -329,6 +330,13 @@ export const createSubmissionService = (deps = {}) => {
       await client.query('COMMIT');
     } catch (error) {
       await client.query('ROLLBACK');
+      if (error instanceof NotFoundError) {
+        log.warn('채점 결과 반영 실패: 제출을 찾을 수 없음(로그만 기록)', {
+          submissionId,
+          error: error.message,
+        });
+        return;
+      }
       log.error('채점 결과 반영 실패', { submissionId, error: error.message });
       throw error;
     } finally {
