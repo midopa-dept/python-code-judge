@@ -597,9 +597,344 @@
 
 ---
 
-## 10. 핵심 설계 결정 및 트레이드오프
+## 10. 답안 정규화 구현 가이드
 
-### 10.1 주요 아키텍처 결정
+### 10.1 답안 정규화의 필요성
+
+학생들이 작성한 코드의 출력을 예상 출력과 비교할 때, 다음과 같은 형식적 차이로 인해 의미적으로 동일한 출력이 오답 처리되는 것을 방지해야 합니다:
+
+- 운영체제별 줄바꿈 문자 차이 (Windows: CRLF, Linux/Mac: LF)
+- 코드 에디터에서 자동으로 추가되는 trailing whitespace
+- 의도하지 않은 빈 줄 추가
+- 부동소수점 계산의 미세한 오차
+
+### 10.2 정규화 구현 전략
+
+**핵심 원칙**: 의미적으로 동일한 출력은 정답으로 처리하되, 의미 있는 차이는 구분한다.
+
+#### 정규화 파이프라인
+
+```
+학생 출력 → 줄바꿈 정규화 → 각 줄 trim → 빈 줄 제거 → 비교
+예상 출력 → 줄바꿈 정규화 → 각 줄 trim → 빈 줄 제거 → 비교
+```
+
+### 10.3 구현 예시 (Python)
+
+#### 기본 정규화 함수
+
+```python
+def normalize_output(output: str) -> str:
+    """
+    출력 문자열을 정규화합니다.
+
+    Args:
+        output: 원본 출력 문자열
+
+    Returns:
+        정규화된 출력 문자열
+    """
+    # 1. 줄바꿈 통일 (CRLF, CR → LF)
+    normalized = output.replace('\r\n', '\n').replace('\r', '\n')
+
+    # 2. 각 줄의 trailing whitespace 제거
+    lines = normalized.split('\n')
+    trimmed_lines = [line.rstrip() for line in lines]
+
+    # 3. leading/trailing empty lines 제거
+    while trimmed_lines and trimmed_lines[0] == '':
+        trimmed_lines.pop(0)
+    while trimmed_lines and trimmed_lines[-1] == '':
+        trimmed_lines.pop()
+
+    # 4. 다시 합치기
+    return '\n'.join(trimmed_lines)
+```
+
+#### 부동소수점 비교 함수
+
+```python
+import re
+import math
+
+def compare_with_float_tolerance(student_output: str, expected_output: str,
+                                 rel_tol: float = 1e-9) -> bool:
+    """
+    부동소수점 오차를 허용하여 출력을 비교합니다.
+
+    Args:
+        student_output: 학생 출력
+        expected_output: 예상 출력
+        rel_tol: 상대 오차 허용 범위 (기본: 1e-9)
+
+    Returns:
+        출력이 일치하는지 여부
+    """
+    # 기본 정규화
+    student = normalize_output(student_output)
+    expected = normalize_output(expected_output)
+
+    # 문자열이 완전히 같으면 true
+    if student == expected:
+        return True
+
+    # 부동소수점 비교 시도
+    try:
+        # 각 줄을 비교
+        student_lines = student.split('\n')
+        expected_lines = expected.split('\n')
+
+        if len(student_lines) != len(expected_lines):
+            return False
+
+        for s_line, e_line in zip(student_lines, expected_lines):
+            # 각 줄에서 숫자 추출
+            s_nums = re.findall(r'[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?', s_line)
+            e_nums = re.findall(r'[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?', e_line)
+
+            if len(s_nums) != len(e_nums):
+                return False
+
+            # 각 숫자 비교
+            for s_num, e_num in zip(s_nums, e_nums):
+                try:
+                    s_val = float(s_num)
+                    e_val = float(e_num)
+
+                    # 상대 오차 비교
+                    if not math.isclose(s_val, e_val, rel_tol=rel_tol, abs_tol=0):
+                        return False
+                except ValueError:
+                    # 숫자로 변환 불가능하면 문자열 비교
+                    if s_num != e_num:
+                        return False
+
+            # 숫자를 제외한 나머지 부분도 비교
+            s_remainder = re.sub(r'[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?', '', s_line)
+            e_remainder = re.sub(r'[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?', '', e_line)
+
+            if s_remainder != e_remainder:
+                return False
+
+        return True
+    except Exception:
+        # 파싱 실패 시 문자열 비교
+        return student == expected
+```
+
+#### 채점 함수
+
+```python
+def judge_output(student_output: str, expected_output: str,
+                problem_config: dict) -> tuple[bool, str]:
+    """
+    학생 출력과 예상 출력을 비교하여 채점합니다.
+
+    Args:
+        student_output: 학생 코드의 출력
+        expected_output: 예상 출력
+        problem_config: 문제 설정 (case_sensitive, float_comparison 등)
+
+    Returns:
+        (정답 여부, 피드백 메시지)
+    """
+    # 대소문자 구분 옵션
+    if not problem_config.get('case_sensitive', True):
+        student_output = student_output.lower()
+        expected_output = expected_output.lower()
+
+    # 부동소수점 비교 활성화 여부
+    if problem_config.get('float_comparison', True):
+        is_correct = compare_with_float_tolerance(
+            student_output,
+            expected_output,
+            rel_tol=problem_config.get('float_tolerance', 1e-9)
+        )
+    else:
+        # 단순 문자열 비교
+        is_correct = normalize_output(student_output) == normalize_output(expected_output)
+
+    if is_correct:
+        return True, "정답입니다!"
+    else:
+        return False, "출력이 예상과 다릅니다."
+```
+
+### 10.4 정규화 설정 옵션
+
+문제별로 다음 옵션을 설정할 수 있습니다:
+
+```typescript
+interface ProblemJudgeConfig {
+  // 대소문자 구분 여부 (기본: true)
+  case_sensitive: boolean;
+
+  // 부동소수점 비교 활성화 (기본: true)
+  float_comparison: boolean;
+
+  // 부동소수점 상대 오차 허용 범위 (기본: 1e-9)
+  float_tolerance: number;
+
+  // trailing whitespace 제거 (기본: true)
+  trim_trailing_whitespace: boolean;
+
+  // leading/trailing empty lines 제거 (기본: true)
+  trim_empty_lines: boolean;
+
+  // 줄바꿈 정규화 (기본: true)
+  normalize_newlines: boolean;
+}
+```
+
+### 10.5 테스트 케이스
+
+답안 정규화 로직의 정확성을 보장하기 위한 단위 테스트:
+
+```python
+import unittest
+
+class TestOutputNormalization(unittest.TestCase):
+
+    def test_trailing_whitespace(self):
+        """줄 끝 공백 제거 테스트"""
+        student = "Hello, World!   \n"
+        expected = "Hello, World!\n"
+        self.assertEqual(normalize_output(student), normalize_output(expected))
+
+    def test_newline_normalization(self):
+        """줄바꿈 문자 정규화 테스트"""
+        student = "123\r\n456\r\n"  # Windows
+        expected = "123\n456\n"      # Linux
+        self.assertEqual(normalize_output(student), normalize_output(expected))
+
+    def test_trailing_empty_lines(self):
+        """마지막 빈 줄 제거 테스트"""
+        student = "1\n2\n3\n\n\n"
+        expected = "1\n2\n3\n"
+        self.assertEqual(normalize_output(student), normalize_output(expected))
+
+    def test_float_tolerance(self):
+        """부동소수점 오차 허용 테스트"""
+        student = "3.141592653589793"
+        expected = "3.141592654"
+        self.assertTrue(compare_with_float_tolerance(student, expected))
+
+    def test_meaningful_whitespace(self):
+        """의미 있는 공백은 구분해야 함"""
+        student = "Hello,World!"
+        expected = "Hello, World!"
+        self.assertNotEqual(normalize_output(student), normalize_output(expected))
+
+    def test_case_sensitive(self):
+        """대소문자 구분 테스트"""
+        student = "HELLO"
+        expected = "hello"
+        config = {'case_sensitive': True}
+        is_correct, _ = judge_output(student, expected, config)
+        self.assertFalse(is_correct)
+
+    def test_case_insensitive(self):
+        """대소문자 무시 테스트"""
+        student = "HELLO"
+        expected = "hello"
+        config = {'case_sensitive': False}
+        is_correct, _ = judge_output(student, expected, config)
+        self.assertTrue(is_correct)
+
+if __name__ == '__main__':
+    unittest.main()
+```
+
+### 10.6 데이터베이스 스키마 추가
+
+문제별 정규화 설정을 저장하기 위한 스키마:
+
+```sql
+-- problems 테이블에 컬럼 추가
+ALTER TABLE problems ADD COLUMN judge_config JSONB DEFAULT '{
+  "case_sensitive": true,
+  "float_comparison": true,
+  "float_tolerance": 1e-9,
+  "trim_trailing_whitespace": true,
+  "trim_empty_lines": true,
+  "normalize_newlines": true
+}'::jsonb;
+
+-- 인덱스 추가 (선택)
+CREATE INDEX idx_problems_judge_config ON problems USING GIN (judge_config);
+```
+
+### 10.7 관리자 UI 가이드
+
+관리자가 문제 등록 시 정규화 옵션을 설정할 수 있도록 UI 제공:
+
+```jsx
+// React 컴포넌트 예시
+function JudgeConfigForm({ config, setConfig }) {
+  return (
+    <div className="judge-config">
+      <h3>채점 설정</h3>
+
+      <label>
+        <input
+          type="checkbox"
+          checked={config.case_sensitive}
+          onChange={(e) => setConfig({...config, case_sensitive: e.target.checked})}
+        />
+        대소문자 구분
+      </label>
+
+      <label>
+        <input
+          type="checkbox"
+          checked={config.float_comparison}
+          onChange={(e) => setConfig({...config, float_comparison: e.target.checked})}
+        />
+        부동소수점 비교 활성화
+      </label>
+
+      {config.float_comparison && (
+        <label>
+          부동소수점 허용 오차:
+          <input
+            type="number"
+            step="1e-10"
+            value={config.float_tolerance}
+            onChange={(e) => setConfig({...config, float_tolerance: parseFloat(e.target.value)})}
+          />
+        </label>
+      )}
+
+      <p className="help-text">
+        ℹ️ trailing whitespace, 줄바꿈 정규화, 빈 줄 제거는 항상 적용됩니다.
+      </p>
+    </div>
+  );
+}
+```
+
+### 10.8 성능 고려사항
+
+- **캐싱**: 정규화된 예상 출력을 캐싱하여 반복 계산 방지
+- **조기 종료**: 문자열 길이가 크게 다르면 바로 오답 판정
+- **병렬 처리**: 여러 테스트 케이스를 병렬로 처리 (향후)
+
+```python
+# 예상 출력 캐싱 예시
+from functools import lru_cache
+
+@lru_cache(maxsize=1000)
+def get_normalized_expected_output(test_case_id: int) -> str:
+    """테스트 케이스의 정규화된 예상 출력을 캐싱하여 반환"""
+    expected_output = fetch_expected_output_from_db(test_case_id)
+    return normalize_output(expected_output)
+```
+
+---
+
+## 11. 핵심 설계 결정 및 트레이드오프
+
+### 11.1 주요 아키텍처 결정
 
 | 결정 사항           | 선택한 방향           | 이유                          | 트레이드오프                              |
 | ------------------- | --------------------- | ----------------------------- | ----------------------------------------- |
@@ -611,7 +946,7 @@
 | **채점 방식**       | 동기 처리             | 초기 규모 작음, 구현 단순     | 대규모 확장 시 비동기 큐 필요             |
 | **캐시 레이어**     | 없음 (Phase 1)        | 복잡도 최소화                 | 데이터베이스 부하 증가 가능               |
 
-### 10.2 보안 관련 결정
+### 11.2 보안 관련 결정
 
 | 위협                 | 완화 전략                                  | 수용 가능한 잔여 위험             |
 | -------------------- | ------------------------------------------ | --------------------------------- |
@@ -620,7 +955,7 @@
 | **데이터 유출**      | RBAC + 최소 권한 + 감사 로그               | 권한 오용 (모니터링으로 대응)     |
 | **인증 우회**        | JWT + httpOnly 쿠키 + HTTPS                | 토큰 탈취 (2시간 짧은 유효 기간)  |
 
-### 10.3 성능 관련 결정
+### 11.3 성능 관련 결정
 
 | 성능 목표               | 달성 전략                                     | 확장 계획                                    |
 | ----------------------- | --------------------------------------------- | -------------------------------------------- |
@@ -631,9 +966,9 @@
 
 ---
 
-## 11. 마이그레이션 및 확장 전략
+## 12. 마이그레이션 및 확장 전략
 
-### 11.1 수평 확장 포인트
+### 12.1 수평 확장 포인트
 
 **Phase 2 확장 시나리오** (50명 이상):
 
@@ -651,7 +986,7 @@
    - 파티셔닝 (제출 이력 날짜별)
    - 감사 로그 아카이빙 (90일 이후 콜드 스토리지)
 
-### 11.2 마이크로서비스 분리 시나리오
+### 12.2 마이크로서비스 분리 시나리오
 
 **언제?**: 100명 이상, 다중 언어 지원 필요 시
 
