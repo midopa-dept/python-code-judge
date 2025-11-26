@@ -356,12 +356,13 @@
 
 ##### 6. 감사 로그 모듈 (audit/)
 
-- [ ] 감사 로그 기록 미들웨어
+- [x] 감사 로그 기록 미들웨어
 
   - 완료 조건: 로그인, 문제 관리, 코드 제출 자동 기록
   - 의존성: audit_logs 테이블
 
-- [ ] 감사 로그 조회 API (최고관리자 전용)
+- [x] 감사 로그 조회 API (최고관리자 전용)
+
   - 완료 조건: GET /api/audit-logs
   - 의존성: audit_logs 테이블
 
@@ -379,102 +380,108 @@
 
 ##### 1. 보안 검증 모듈
 
-- [ ] AST 정적 분석기 구현
+- [x] AST 정적 분석기 구현
 
   - 완료 조건: 금지 모듈 탐지 (os, subprocess, socket, urllib, eval, exec)
   - 의존성: Python ast 모듈
 
-- [ ] 허용 모듈 화이트리스트 정의
+- [x] 허용 모듈 화이트리스트 정의
 
   - 완료 조건: math, random, itertools, collections, string, re, datetime, json 등
   - 의존성: AST 분석기
 
-- [ ] 코드 크기 검증
+- [x] 코드 크기 검증
+
   - 완료 조건: 최대 64KB 제한
   - 의존성: 없음
 
 ##### 2. 코드 실행 엔진
 
-- [ ] subprocess 격리 실행 함수 구현
+- [x] subprocess 격리 실행 함수 구현
 
   - 완료 조건: 별도 프로세스에서 Python 코드 실행
   - 의존성: subprocess 모듈
 
-- [ ] 타임아웃 설정
+- [x] 타임아웃 설정
 
   - 완료 조건: 문제별 시간 제한 (1-10초) 적용
   - 의존성: subprocess timeout
 
-- [ ] 메모리 제한 구현 (psutil)
+- [x] 메모리 제한 구현 (psutil)
 
   - 완료 조건: 256MB 메모리 제한
   - 의존성: psutil 라이브러리
 
-- [ ] 임시 디렉토리 생성 및 정리
+- [x] 임시 디렉토리 생성 및 정리
+
   - 완료 조건: 코드 실행 후 임시 파일 자동 삭제
   - 의존성: fs, path 모듈
 
 ##### 3. 답안 정규화 및 비교
 
-- [ ] 출력 정규화 함수 구현
+- [x] 출력 정규화 함수 구현
 
   - 완료 조건: 줄바꿈 통일, trailing whitespace 제거, 빈 줄 제거
   - 의존성: 없음
 
-- [ ] 부동소수점 비교 함수 구현
+- [x] 부동소수점 비교 함수 구현
 
   - 완료 조건: 상대 오차 1e-9 허용
   - 의존성: 없음
 
-- [ ] 테스트 케이스별 출력 비교
+- [x] 테스트 케이스별 출력 비교
+
   - 완료 조건: 학생 출력 vs 예상 출력 비교
   - 의존성: 정규화 함수
 
 ##### 4. 채점 로직
 
-- [ ] 채점 결과 상태 정의
+- [x] 채점 결과 상태 정의
 
   - 완료 조건: AC, WA, TLE, RE, SE, MLE 상태 처리
   - 의존성: 없음
 
-- [ ] 전체 테스트 케이스 실행 및 채점
+- [x] 전체 테스트 케이스 실행 및 채점
 
   - 완료 조건: 모든 케이스 통과 시 AC, 하나라도 실패 시 WA
   - 의존성: 코드 실행 엔진, 답안 비교
 
-- [ ] 실행 시간 및 메모리 측정
+- [x] 실행 시간 및 메모리 측정
+
   - 완료 조건: 각 테스트 케이스별 실행 시간, 메모리 기록
   - 의존성: psutil
 
 ##### 5. 제출 및 채점 모듈 (submissions/)
 
-- [ ] 코드 제출 API
+- [x] 코드 제출 API
 
   - 완료 조건: POST /api/submissions (코드 텍스트 또는 파일 업로드)
   - 의존성: AST 분석기
 
-- [ ] 중복 제출 차단
+- [x] 중복 제출 차단
 
   - 완료 조건: 5초 이내 동일 문제 중복 제출 불가
   - 의존성: submissions 테이블 조회
 
-- [ ] 채점 API 통합
+- [x] 채점 API 통합
 
   - 완료 조건: 제출 즉시 채점 시작 → 결과 저장
   - 의존성: 채점 엔진
 
-- [ ] 제출 이력 조회 API
+- [x] 제출 이력 조회 API
 
   - 완료 조건: GET /api/submissions?student_id=1
   - 의존성: submissions 테이블
 
-- [ ] 채점 결과 상세 조회 API
+- [x] 채점 결과 상세 조회 API
+
   - 완료 조건: GET /api/submissions/:id/result
   - 의존성: judging_results 테이블
 
 ##### 6. 스코어보드 자동 업데이트
 
-- [ ] 채점 완료 시 스코어보드 갱신 트리거
+- [x] 채점 완료 시 스코어보드 갱신 트리거
+
   - 완료 조건: AC 시 점수, 해결 문제 수, 순위 자동 업데이트
   - 의존성: scoreboards 테이블
 
@@ -492,12 +499,12 @@
 
 ##### 1. 공통 인프라
 
-- [ ] React + Vite 프로젝트 초기화
+- [x] React + Vite 프로젝트 초기화
 
   - 완료 조건: npm run dev 실행 가능
   - 의존성: 없음
 
-- [ ] Tailwind CSS 설정
+- [x] Tailwind CSS 설정
 
   - 완료 조건: 유틸리티 클래스 사용 가능
   - 의존성: Tailwind 설치
@@ -508,6 +515,7 @@
   - 의존성: react-router-dom
 
 - [ ] Axios 인스턴스 설정 (API 클라이언트)
+
   - 완료 조건: JWT 토큰 자동 추가, 에러 처리
   - 의존성: axios
 
@@ -524,6 +532,7 @@
   - 의존성: POST /api/auth/signup
 
 - [ ] 비밀번호 찾기 모달
+
   - 완료 조건: 군번(영문/숫자/하이픈), 이름 입력 후 비밀번호 재설정
   - 의존성: POST /api/auth/reset-password
 
@@ -555,6 +564,7 @@
   - 의존성: GET /api/submissions/:id/result
 
 - [ ] 실시간 스코어보드 (폴링)
+
   - 완료 조건: 5초 간격 자동 새로고침, 순위 변동 애니메이션
   - 의존성: GET /api/sessions/:id/scoreboard
 
@@ -581,6 +591,7 @@
   - 의존성: POST /api/sessions
 
 - [ ] 세션 관리 화면
+
   - 완료 조건: 시작/종료 버튼, 초기화 버튼
   - 의존성: PUT /api/sessions/:id/status, DELETE /api/sessions/:id/reset
 
@@ -597,6 +608,7 @@
   - 의존성: react-toastify
 
 - [ ] 모달 컴포넌트
+
   - 완료 조건: 재사용 가능한 모달 래퍼
   - 의존성: 없음
 
@@ -625,6 +637,7 @@
   - 의존성: 전체 시스템 통합
 
 - [ ] 채점 엔진 스트레스 테스트
+
   - 완료 조건: 10개 제출 동시 처리 성공
   - 의존성: 채점 엔진
 
@@ -641,6 +654,7 @@
   - 의존성: 채점 엔진
 
 - [ ] 메모리 제한 테스트
+
   - 완료 조건: 대용량 리스트 생성 시 MLE 반환
   - 의존성: 채점 엔진
 
@@ -672,6 +686,7 @@
   - 의존성: Supabase 테이블 생성
 
 - [ ] Supabase 연결 테스트
+
   - 완료 조건: Backend에서 DATABASE_URL로 Supabase 쿼리 성공
   - 의존성: 시드 데이터 이전 완료
 
@@ -693,6 +708,7 @@
   - 의존성: Frontend 코드 완료
 
 - [ ] GitHub Actions CI/CD 설정 (선택사항)
+
   - 완료 조건: main 브랜치 푸시 시 자동 배포
   - 의존성: .github/workflows/deploy.yml
 
@@ -709,6 +725,7 @@
   - 의존성: UI 완료
 
 - [ ] 배포 가이드 작성
+
   - 완료 조건: 환경 변수 설정, 배포 절차, Supabase 마이그레이션 방법 문서화
   - 의존성: 배포 완료
 
@@ -725,6 +742,7 @@
   - 의존성: winston, Vercel Analytics
 
 - [ ] 백업 자동화 확인
+
   - 완료 조건: Supabase 일 1회 자동 백업 설정
   - 의존성: Supabase 설정
 
@@ -738,111 +756,114 @@
 
 ### 1. 스키마 설계 및 마이그레이션
 
-- [ ] students 테이블 마이그레이션 스크립트 작성
+- [x] students 테이블 마이그레이션 스크립트 작성
 
   - 완료 조건: 컬럼, 제약조건, 인덱스 포함된 SQL 파일
   - 의존성: 없음
   - 병렬 가능: administrators, problems 테이블과 병렬 가능
 
-- [ ] administrators 테이블 마이그레이션 스크립트 작성
+- [x] administrators 테이블 마이그레이션 스크립트 작성
 
   - 완료 조건: 컬럼, 제약조건, 인덱스 포함된 SQL 파일
   - 의존성: 없음
   - 병렬 가능: students, problems 테이블과 병렬 가능
 
-- [ ] problems 테이블 마이그레이션 스크립트 작성
+- [x] problems 테이블 마이그레이션 스크립트 작성
 
   - 완료 조건: 컬럼, 제약조건, 인덱스, FK(author_id), judge_config JSONB 포함
   - 의존성: administrators 테이블
   - 병렬 가능: 없음
 
-- [ ] test_cases 테이블 마이그레이션 스크립트 작성
+- [x] test_cases 테이블 마이그레이션 스크립트 작성
 
   - 완료 조건: 컬럼, 제약조건, FK(problem_id), 복합 인덱스 포함
   - 의존성: problems 테이블
   - 병렬 가능: 없음
 
-- [ ] submissions 테이블 마이그레이션 스크립트 작성
+- [x] submissions 테이블 마이그레이션 스크립트 작성
 
   - 완료 조건: 컬럼, FK(student_id, problem_id, session_id), 복합 인덱스 포함
   - 의존성: students, problems 테이블
   - 병렬 가능: 없음
 
-- [ ] judging_results 테이블 마이그레이션 스크립트 작성
+- [x] judging_results 테이블 마이그레이션 스크립트 작성
 
   - 완료 조건: 컬럼, FK(submission_id), UNIQUE 제약, CHECK 조건 포함
   - 의존성: submissions 테이블
   - 병렬 가능: 없음
 
-- [ ] education_sessions 테이블 마이그레이션 스크립트 작성
+- [x] education_sessions 테이블 마이그레이션 스크립트 작성
 
   - 완료 조건: 컬럼, FK(creator_id), CHECK(end_time > start_time) 포함
   - 의존성: administrators 테이블
   - 병렬 가능: 없음
 
-- [ ] session_students 매핑 테이블 마이그레이션 스크립트 작성
+- [x] session_students 매핑 테이블 마이그레이션 스크립트 작성
 
   - 완료 조건: 복합 PK(session_id, student_id), FK 제약 포함
   - 의존성: education_sessions, students 테이블
   - 병렬 가능: session_problems, scoreboards와 병렬 가능
 
-- [ ] session_problems 매핑 테이블 마이그레이션 스크립트 작성
+- [x] session_problems 매핑 테이블 마이그레이션 스크립트 작성
 
   - 완료 조건: 복합 PK(session_id, problem_id), FK 제약 포함
   - 의존성: education_sessions, problems 테이블
   - 병렬 가능: session_students, scoreboards와 병렬 가능
 
-- [ ] scoreboards 테이블 마이그레이션 스크립트 작성
+- [x] scoreboards 테이블 마이그레이션 스크립트 작성
 
   - 완료 조건: 복합 PK(session_id, student_id), rank 인덱스 포함
   - 의존성: education_sessions, students 테이블
   - 병렬 가능: session_students, session_problems와 병렬 가능
 
-- [ ] audit_logs 테이블 마이그레이션 스크립트 작성
+- [x] audit_logs 테이블 마이그레이션 스크립트 작성
+
   - 완료 조건: 컬럼, 인덱스(user_id, performed_at, action_type) 포함
   - 의존성: 없음
   - 병렬 가능: 다른 모든 테이블과 병렬 가능
 
 ### 2. 트리거 및 자동화
 
-- [ ] updated_at 자동 갱신 트리거 작성
+- [x] updated_at 자동 갱신 트리거 작성
 
   - 완료 조건: problems, test_cases, education_sessions 테이블에 적용
   - 의존성: 해당 테이블 마이그레이션
   - 병렬 가능: 다른 트리거와 병렬 가능
 
-- [ ] submission_count 자동 증가 트리거 작성
+- [x] submission_count 자동 증가 트리거 작성
 
   - 완료 조건: submissions INSERT 시 problems.submission_count 증가
   - 의존성: problems, submissions 테이블
   - 병렬 가능: 다른 트리거와 병렬 가능
 
-- [ ] accuracy_rate 자동 계산 트리거 작성
+- [x] accuracy_rate 자동 계산 트리거 작성
 
   - 완료 조건: judging_results INSERT/UPDATE 시 정답률 재계산
   - 의존성: problems, judging_results 테이블
   - 병렬 가능: 다른 트리거와 병렬 가능
 
-- [ ] scoreboard 자동 업데이트 트리거 작성
+- [x] scoreboard 자동 업데이트 트리거 작성
+
   - 완료 조건: AC 결과 시 스코어보드 점수/순위 자동 갱신
   - 의존성: judging_results, scoreboards 테이블
   - 병렬 가능: 다른 트리거와 병렬 가능
 
 ### 3. 시드 데이터
 
-- [ ] 관리자 계정 시드 데이터 작성
+- [x] 관리자 계정 시드 데이터 작성
 
   - 완료 조건: super_admin 1명, admin 1명 기본 계정 생성 스크립트
   - 의존성: administrators 테이블
   - 병렬 가능: 학생, 문제 시드와 병렬 가능
 
-- [ ] 테스트 학생 계정 시드 데이터 작성
+- [x] 테스트 학생 계정 시드 데이터 작성
 
   - 완료 조건: 개발/테스트용 학생 5명 생성 스크립트
   - 의존성: students 테이블
   - 병렬 가능: 관리자, 문제 시드와 병렬 가능
 
-- [ ] 샘플 문제 시드 데이터 작성
+- [x] 샘플 문제 시드 데이터 작성
+
   - 완료 조건: 11개 카테고리 각 1개씩 샘플 문제 + 테스트 케이스
   - 의존성: problems, test_cases 테이블
   - 병렬 가능: 관리자, 학생 시드와 병렬 가능
