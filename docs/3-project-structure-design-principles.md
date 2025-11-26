@@ -27,30 +27,10 @@
 
 **적용 방법**:
 
-```
 - 3-tier 아키텍처 (Presentation - Application - Data)
 - 서버리스 배포로 인프라 관리 복잡도 제거
 - 필요한 경우에만 추상화 레이어 추가
 - YAGNI (You Aren't Gonna Need It) 원칙 준수
-```
-
-**예시**:
-
-```javascript
-// GOOD: 단순하고 명확한 구조
-router.post("/submissions", authMiddleware, submissionController.submit);
-
-// AVOID: 불필요한 추상화 (초기 단계)
-router.post(
-  "/submissions",
-  composePipeline(
-    authStrategy,
-    validationStrategy,
-    rateLimitStrategy,
-    submissionStrategy
-  )
-);
-```
 
 ### 1.2 관심사의 분리 (Separation of Concerns)
 
@@ -64,27 +44,10 @@ router.post(
 
 **적용 방법**:
 
-```
 - 비즈니스 로직은 서비스 계층에만 위치
 - 데이터 접근은 리포지토리/DAO 패턴 사용
 - 프레젠테이션 로직은 컨트롤러/컴포넌트에만 위치
 - 횡단 관심사(인증, 로깅)는 미들웨어로 분리
-```
-
-**예시**:
-
-```javascript
-// Backend 계층 분리
-// controllers/submissionController.js - HTTP 요청/응답 처리
-// services/submissionService.js - 비즈니스 로직
-// repositories/submissionRepository.js - 데이터베이스 접근
-// middlewares/authMiddleware.js - 인증 확인
-
-// Frontend 계층 분리
-// components/SubmissionForm.jsx - UI 렌더링
-// hooks/useSubmission.js - 상태 관리 및 API 호출
-// api/submissionApi.js - HTTP 클라이언트
-```
 
 ### 1.3 모놀리스-우선, 모듈러 설계 (Modular Monolith)
 
@@ -96,18 +59,13 @@ router.post(
 - 초기 규모에서는 모놀리스가 효율적
 - 향후 필요 시 모듈 단위로 분리 가능하도록 설계
 
-**적용 방법**:
+**모듈 구조**:
 
-```
-backend/
-  src/
-    modules/
-      auth/        # 인증 모듈 (독립적)
-      problems/    # 문제 관리 모듈
-      submissions/ # 제출 및 채점 모듈
-      sessions/    # 세션 관리 모듈
-      users/       # 사용자 관리 모듈
-```
+- auth/ - 인증 모듈 (독립적)
+- problems/ - 문제 관리 모듈
+- submissions/ - 제출 및 채점 모듈
+- sessions/ - 세션 관리 모듈
+- users/ - 사용자 관리 모듈
 
 **각 모듈은**:
 
@@ -128,12 +86,10 @@ backend/
 
 **적용 방법**:
 
-```
 - 초기에는 동기 처리 (비동기 큐 도입 보류)
 - 캐시 레이어 없이 시작 (필요 시 Redis 추가)
 - 데이터베이스 정규화보다 읽기 성능 우선
 - 폴링 방식 사용 (WebSocket 대신)
-```
 
 **판단 기준**:
 
@@ -153,7 +109,6 @@ backend/
 
 **적용 방법**:
 
-```
 1. Defense in Depth (다층 방어)
    - AST 정적 분석 (1차 방어)
    - subprocess 프로세스 격리 (2차 방어)
@@ -168,29 +123,6 @@ backend/
    - 에러 발생 시 실행 중단
    - 의심스러운 패턴 발견 시 차단
    - 기본값은 항상 거부(deny by default)
-```
-
-**예시**:
-
-```javascript
-// 코드 실행 파이프라인
-async function executeCode(code, testCases) {
-  // 1차 방어: AST 정적 분석
-  await validateCodeAST(code); // 금지 모듈/함수 검사
-
-  // 2차 방어: 프로세스 격리
-  const result = await runInSandbox(code, {
-    timeout: 10000, // 10초 타임아웃
-    maxMemory: 256, // 256MB 메모리 제한
-    allowedModules: WHITELIST,
-  });
-
-  // 3차 방어: 결과 검증
-  validateExecutionResult(result);
-
-  return result;
-}
-```
 
 ---
 
@@ -206,47 +138,19 @@ async function executeCode(code, testCases) {
 - 구현 교체 용이성 (예: Supabase → 다른 DB)
 - 순환 의존성 방지
 
-**적용 방법**:
-
-```javascript
-// GOOD: 서비스는 인터페이스(추상)에 의존
-class SubmissionService {
-  constructor(submissionRepository, judgingEngine) {
-    this.submissionRepository = submissionRepository;
-    this.judgingEngine = judgingEngine;
-  }
-
-  async submitCode(studentId, problemId, code) {
-    // 비즈니스 로직
-    const submission = await this.submissionRepository.create({...});
-    const result = await this.judgingEngine.judge(code, testCases);
-    return result;
-  }
-}
-
-// BAD: 서비스가 구체 구현에 직접 의존
-class SubmissionService {
-  async submitCode(studentId, problemId, code) {
-    const submission = await supabase.from('submissions').insert({...});
-    const result = await subprocess.run(['python3', code]);
-    // ...
-  }
-}
-```
-
 ### 2.2 계층 간 의존성 방향
 
 **원칙**: 의존성은 항상 외부에서 내부로, 상위에서 하위로 흐릅니다.
 
-```
-Presentation Layer (Controllers, Components)
-        ↓
-Application Layer (Services, Use Cases)
-        ↓
-Domain Layer (Entities, Business Rules)
-        ↓
-Infrastructure Layer (Repositories, External APIs)
-```
+**계층 구조**:
+
+- Presentation Layer (Controllers, Components)
+  - ↓
+- Application Layer (Services, Use Cases)
+  - ↓
+- Domain Layer (Entities, Business Rules)
+  - ↓
+- Infrastructure Layer (Repositories, External APIs)
 
 **규칙**:
 
@@ -264,50 +168,16 @@ Infrastructure Layer (Repositories, External APIs)
 
 **원칙**: 모듈 간 의존성은 공개 인터페이스를 통해서만 이루어집니다.
 
-**적용 방법**:
-
-```javascript
-// modules/problems/index.js (공개 인터페이스)
-export { ProblemService } from "./services/problemService";
-export { ProblemController } from "./controllers/problemController";
-// 내부 구현은 노출하지 않음
-
-// modules/submissions/services/submissionService.js
-import { ProblemService } from "../../problems"; // OK
-// import { ProblemRepository } from '../../problems/repositories/problemRepository'; // FORBIDDEN
-```
-
 **의존성 규칙**:
 
-```
-auth ← 모든 모듈 (인증은 공통 의존성)
-submissions → problems (문제 정보 조회)
-sessions → problems, submissions (세션은 문제와 제출 의존)
-users ← auth (사용자 정보는 인증 모듈이 사용)
-```
+- auth ← 모든 모듈 (인증은 공통 의존성)
+- submissions → problems (문제 정보 조회)
+- sessions → problems, submissions (세션은 문제와 제출 의존)
+- users ← auth (사용자 정보는 인증 모듈이 사용)
 
 ### 2.4 공유 코드 관리
 
 **원칙**: 공통 로직은 shared 폴더에 집중하되, 과도한 공유는 지양합니다.
-
-**적용 방법**:
-
-```
-backend/
-  src/
-    shared/
-      utils/          # 순수 유틸리티 함수
-        dateUtils.js
-        stringUtils.js
-      constants/      # 전역 상수
-        errors.js
-        config.js
-      types/          # 공통 TypeScript 타입
-        common.ts
-      middlewares/    # 공통 미들웨어
-        authMiddleware.js
-        errorHandler.js
-```
 
 **공유 가능 조건**:
 
@@ -330,72 +200,42 @@ backend/
 
 **파일 및 폴더**:
 
-- 폴더명: `camelCase` (예: `submissionService`)
-- 파일명: `camelCase.js` (예: `submissionController.js`)
-- 클래스 파일: `PascalCase.js` (예: `SubmissionService.js`)
-- 테스트 파일: `*.test.js` (예: `submissionService.test.js`)
+- 폴더명: `camelCase`
+- 파일명: `camelCase.js`
+- 클래스 파일: `PascalCase.js`
+- 테스트 파일: `*.test.js`
 
 **코드**:
 
-```javascript
-// 클래스: PascalCase
-class SubmissionService { }
-
-// 함수/메서드: camelCase
-function submitCode() { }
-async function judgeSubmission() { }
-
-// 변수: camelCase
-const studentId = 1;
-const submissionResult = await ...;
-
-// 상수: UPPER_SNAKE_CASE
-const MAX_CODE_SIZE = 64 * 1024;
-const JUDGING_TIMEOUT = 30000;
-
-// private 메서드: _camelCase (관례)
-class Service {
-  _validateInput() { }
-}
-```
+- 클래스: PascalCase
+- 함수/메서드: camelCase
+- 변수: camelCase
+- 상수: UPPER_SNAKE_CASE
+- private 메서드: _camelCase (관례)
 
 **데이터베이스**:
 
-- 테이블명: `snake_case` 복수형 (예: `submissions`, `test_cases`)
-- 컬럼명: `snake_case` (예: `student_id`, `created_at`)
-- 인덱스: `idx_table_column` (예: `idx_submissions_student_id`)
-- 외래키: `fk_table_column` (예: `fk_submissions_problem_id`)
+- 테이블명: `snake_case` 복수형
+- 컬럼명: `snake_case`
+- 인덱스: `idx_table_column`
+- 외래키: `fk_table_column`
 
 #### Frontend (React + Tailwind)
 
 **파일 및 폴더**:
 
-- 컴포넌트 파일: `PascalCase.jsx` (예: `SubmissionForm.jsx`)
-- 훅 파일: `use*.js` (예: `useSubmission.js`)
-- 유틸 파일: `camelCase.js` (예: `apiClient.js`)
-- 폴더명: `camelCase` (예: `components/`, `hooks/`)
+- 컴포넌트 파일: `PascalCase.jsx`
+- 훅 파일: `use*.js`
+- 유틸 파일: `camelCase.js`
+- 폴더명: `camelCase`
 
 **코드**:
 
-```javascript
-// 컴포넌트: PascalCase
-function SubmissionForm() {}
-const ProblemCard = () => {};
-
-// 훅: useCamelCase
-function useSubmission() {}
-function useProblemList(category) {}
-
-// Props: camelCase
-function Component({ studentId, onSubmit }) {}
-
-// State: camelCase
-const [isLoading, setIsLoading] = useState(false);
-
-// 이벤트 핸들러: handle* 또는 on*
-const handleSubmit = () => {};
-<button onClick={handleClick}>Submit</button>;
-```
+- 컴포넌트: PascalCase
+- 훅: useCamelCase
+- Props: camelCase
+- State: camelCase
+- 이벤트 핸들러: handle* 또는 on*
 
 ### 3.2 함수 및 메서드 설계
 
@@ -407,53 +247,14 @@ const handleSubmit = () => {};
 - 중첩 깊이 최대 3단계
 - 파라미터 최대 5개 (넘으면 객체로 묶기)
 
-**예시**:
-
-```javascript
-// GOOD: 단일 책임
-async function submitCode(studentId, problemId, code) {
-  await validateSubmission(studentId, problemId, code);
-  const submission = await createSubmission(studentId, problemId, code);
-  await queueForJudging(submission.id);
-  return submission;
-}
-
-// BAD: 너무 많은 책임
-async function submitCodeAndJudgeAndUpdateScoreboard(...) {
-  // 100+ lines...
-}
-```
-
 **함수 명명 패턴**:
 
-```javascript
-// 조회: get*, find*, fetch*
-getSubmissionById(id);
-findSubmissionsByStudent(studentId);
-fetchProblemsInCategory(category);
-
-// 생성: create*, add*
-createSubmission(data);
-addTestCase(problemId, testCase);
-
-// 수정: update*, modify*
-updateProblemTitle(id, newTitle);
-modifySessionStatus(id, status);
-
-// 삭제: delete*, remove*
-deleteSubmission(id);
-removeProblemFromSession(sessionId, problemId);
-
-// 검증: validate*, check*, verify*
-validateCode(code);
-checkPermission(userId, action);
-verifyTestCase(input, output);
-
-// 변환: to*, from*, convert*
-toDTO(entity);
-fromJSON(json);
-convertToAST(code);
-```
+- 조회: get*, find*, fetch*
+- 생성: create*, add*
+- 수정: update*, modify*
+- 삭제: delete*, remove*
+- 검증: validate*, check*, verify*
+- 변환: to*, from*, convert*
 
 ### 3.3 주석 및 문서화
 
@@ -461,41 +262,20 @@ convertToAST(code);
 
 **필수 주석**:
 
-```javascript
-/**
- * 제출된 Python 코드를 자동 채점합니다.
- *
- * @param {number} submissionId - 제출 ID
- * @param {Array} testCases - 테스트 케이스 배열
- * @returns {Promise<Object>} 채점 결과 (status, passedCases, executionTime)
- * @throws {ValidationError} 코드에 금지된 모듈이 포함된 경우
- * @throws {TimeoutError} 채점 시간이 30초를 초과한 경우
- */
-async function judgeSubmission(submissionId, testCases) {
-  // ...
-}
-```
+- 함수/메서드: JSDoc 형식의 설명, 파라미터, 반환값, 예외
+- 복잡한 비즈니스 로직: 의도와 맥락 설명
+- 임시 해결책: TODO, FIXME, HACK 주석
 
-**왜 주석 (Good)**:
+**좋은 주석**:
 
-```javascript
-// Vercel 서버리스는 WebSocket을 지원하지 않으므로 폴링 사용
-setInterval(() => fetchScoreboard(), 5000);
+- 기술적 제약사항이나 비즈니스 규칙 설명
+- 외부 의존성으로 인한 제약사항 설명
+- 성능 최적화나 보안 결정에 대한 설명
 
-// AST 파싱으로 런타임 실행 전 악의적 코드 차단
-const ast = parseAST(code);
-validateNoForbiddenModules(ast);
-```
+**나쁜 주석**:
 
-**무엇 주석 (Bad - 삭제 필요)**:
-
-```javascript
-// studentId를 1 증가시킴
-studentId = studentId + 1;
-
-// 제출을 생성함
-const submission = await createSubmission(...);
-```
+- 코드가 무엇을 하는지 그대로 설명하는 주석
+- 명확한 변수명/함수명으로 대체 가능한 주석
 
 ### 3.4 에러 처리
 
@@ -503,85 +283,17 @@ const submission = await createSubmission(...);
 
 **에러 계층**:
 
-```javascript
-// shared/errors/
-class AppError extends Error {
-  constructor(message, statusCode = 500) {
-    super(message);
-    this.statusCode = statusCode;
-    this.isOperational = true;
-  }
-}
+- AppError: 기본 애플리케이션 에러
+- ValidationError: 입력 검증 실패 (400)
+- AuthenticationError: 인증 실패 (401)
+- ForbiddenError: 권한 없음 (403)
+- NotFoundError: 리소스 없음 (404)
 
-class ValidationError extends AppError {
-  constructor(message) {
-    super(message, 400);
-  }
-}
+**에러 처리 레벨**:
 
-class AuthenticationError extends AppError {
-  constructor(message = "Authentication failed") {
-    super(message, 401);
-  }
-}
-
-class ForbiddenError extends AppError {
-  constructor(message = "Access forbidden") {
-    super(message, 403);
-  }
-}
-
-class NotFoundError extends AppError {
-  constructor(resource) {
-    super(`${resource} not found`, 404);
-  }
-}
-```
-
-**에러 처리 패턴**:
-
-```javascript
-// 컨트롤러: 에러를 미들웨어로 전달
-async function submitCode(req, res, next) {
-  try {
-    const result = await submissionService.submitCode(...);
-    res.json(result);
-  } catch (error) {
-    next(error); // 에러 미들웨어가 처리
-  }
-}
-
-// 서비스: 비즈니스 에러를 명확히 표현
-async function submitCode(studentId, problemId, code) {
-  if (code.length > MAX_CODE_SIZE) {
-    throw new ValidationError(`Code size exceeds ${MAX_CODE_SIZE} bytes`);
-  }
-
-  const problem = await problemRepository.findById(problemId);
-  if (!problem) {
-    throw new NotFoundError('Problem');
-  }
-
-  // ...
-}
-
-// 에러 미들웨어: 중앙 집중 처리
-function errorHandler(err, req, res, next) {
-  if (err.isOperational) {
-    return res.status(err.statusCode).json({
-      status: 'error',
-      message: err.message
-    });
-  }
-
-  // 예상치 못한 에러는 로그 후 일반 메시지
-  logger.error(err);
-  res.status(500).json({
-    status: 'error',
-    message: 'Internal server error'
-  });
-}
-```
+- 컨트롤러: 에러를 미들웨어로 전달
+- 서비스: 비즈니스 에러를 명확히 표현
+- 에러 미들웨어: 중앙 집중 처리
 
 ---
 
@@ -591,15 +303,9 @@ function errorHandler(err, req, res, next) {
 
 **테스트 피라미드**:
 
-```
-      /\
-     /E2E\          적음 (10%)
-    /------\
-   /Integration\    중간 (30%)
-  /------------\
- /   Unit Tests  \  많음 (60%)
-/----------------\
-```
+- Unit Tests: 많음 (60%)
+- Integration Tests: 중간 (30%)
+- E2E Tests: 적음 (10%)
 
 **테스트 우선순위**:
 
@@ -625,67 +331,6 @@ function errorHandler(err, req, res, next) {
 - 외부 의존성은 모킹
 - AAA 패턴 (Arrange-Act-Assert)
 
-**예시**:
-
-```javascript
-// submissionService.test.js
-describe("SubmissionService", () => {
-  let submissionService;
-  let mockRepository;
-  let mockJudgingEngine;
-
-  beforeEach(() => {
-    mockRepository = {
-      create: jest.fn(),
-      findById: jest.fn(),
-    };
-    mockJudgingEngine = {
-      judge: jest.fn(),
-    };
-    submissionService = new SubmissionService(
-      mockRepository,
-      mockJudgingEngine
-    );
-  });
-
-  describe("submitCode", () => {
-    it("should create submission and return result", async () => {
-      // Arrange
-      const studentId = 1;
-      const problemId = 1;
-      const code = 'print("hello")';
-      mockRepository.create.mockResolvedValue({ id: 1 });
-      mockJudgingEngine.judge.mockResolvedValue({ status: "AC" });
-
-      // Act
-      const result = await submissionService.submitCode(
-        studentId,
-        problemId,
-        code
-      );
-
-      // Assert
-      expect(mockRepository.create).toHaveBeenCalledWith({
-        student_id: studentId,
-        problem_id: problemId,
-        code: code,
-      });
-      expect(result.status).toBe("AC");
-    });
-
-    it("should throw ValidationError if code size exceeds limit", async () => {
-      // Arrange
-      const code = "a".repeat(65 * 1024); // 65KB
-
-      // Act & Assert
-      await expect(submissionService.submitCode(1, 1, code)).rejects.toThrow(
-        ValidationError
-      );
-    });
-  });
-});
-```
-
 ### 4.3 통합 테스트 (Integration Tests)
 
 **프레임워크**: Jest + Supertest
@@ -695,48 +340,6 @@ describe("SubmissionService", () => {
 - 실제 데이터베이스 사용 (테스트 DB)
 - 전체 요청 흐름 검증
 - 트랜잭션 롤백으로 격리
-
-**예시**:
-
-```javascript
-// submissionController.integration.test.js
-describe("POST /api/submissions", () => {
-  beforeEach(async () => {
-    await setupTestDatabase();
-  });
-
-  afterEach(async () => {
-    await cleanupTestDatabase();
-  });
-
-  it("should submit code and return judging result", async () => {
-    const token = await getAuthToken(testStudentId);
-
-    const response = await request(app)
-      .post("/api/submissions")
-      .set("Authorization", `Bearer ${token}`)
-      .send({
-        problem_id: 1,
-        code: 'print("hello")',
-        python_version: "3.10",
-      })
-      .expect(200);
-
-    expect(response.body).toMatchObject({
-      id: expect.any(Number),
-      status: "AC",
-      execution_time: expect.any(Number),
-    });
-  });
-
-  it("should return 401 if not authenticated", async () => {
-    await request(app)
-      .post("/api/submissions")
-      .send({ problem_id: 1, code: 'print("hello")' })
-      .expect(401);
-  });
-});
-```
 
 ### 4.4 E2E 테스트
 
@@ -748,71 +351,20 @@ describe("POST /api/submissions", () => {
 - 관리자 로그인 → 문제 등록 → 테스트 케이스 추가
 - 세션 생성 → 학생 참여 → 스코어보드 확인
 
-**예시**:
-
-```javascript
-// e2e/submission.spec.js
-test("student can submit code and see result", async ({ page }) => {
-  // 로그인
-  await page.goto("/login");
-  await page.fill('input[name="id"]', "student1");
-  await page.fill('input[name="password"]', "password");
-  await page.click('button[type="submit"]');
-
-  // 문제 선택
-  await page.click("text=조건문");
-  await page.click("text=FizzBuzz");
-
-  // 코드 작성 및 제출
-  await page.fill('textarea[name="code"]', SAMPLE_CODE);
-  await page.click('button:has-text("제출")');
-
-  // 결과 확인
-  await expect(page.locator(".result-status")).toHaveText("정답 (AC)");
-});
-```
-
 ### 4.5 코드 품질 도구
 
 **Linter**: ESLint
 
-```javascript
-// .eslintrc.js
-module.exports = {
-  extends: ["eslint:recommended", "plugin:react/recommended"],
-  rules: {
-    "no-console": ["warn", { allow: ["error"] }],
-    "max-lines": ["warn", { max: 300 }],
-    "max-depth": ["error", 3],
-    complexity: ["warn", 10],
-    "no-unused-vars": "error",
-  },
-};
-```
+- 기본 규칙: eslint:recommended, plugin:react/recommended
+- 주요 규칙: no-console, max-lines, max-depth, complexity
 
 **Formatter**: Prettier
 
-```json
-{
-  "semi": true,
-  "singleQuote": true,
-  "tabWidth": 2,
-  "trailingComma": "es5",
-  "printWidth": 100
-}
-```
+- 일관된 코드 스타일 자동 적용
 
 **커밋 훅**: Husky + lint-staged
 
-```json
-// package.json
-{
-  "lint-staged": {
-    "*.js": ["eslint --fix", "prettier --write"],
-    "*.jsx": ["eslint --fix", "prettier --write"]
-  }
-}
-```
+- 커밋 전 자동 린트 및 포맷팅
 
 ---
 
@@ -824,300 +376,79 @@ module.exports = {
 
 **환경 분리**:
 
-```
-.env.development    # 로컬 개발
-.env.test           # 테스트
-.env.production     # 프로덕션 (Vercel 환경 변수로 관리)
-```
+- .env.development - 로컬 개발
+- .env.test - 테스트
+- .env.production - 프로덕션 (Vercel 환경 변수로 관리)
 
 **필수 환경 변수**:
 
-```bash
-# .env.example (버전 관리에 포함)
-# Database
-DATABASE_URL=postgresql://user:password@host:5432/dbname
-
-# Authentication
-JWT_SECRET=your-secret-key-change-in-production
-JWT_EXPIRES_IN=2h
-
-# Judging Engine
-JUDGING_TIMEOUT=30000
-MAX_CODE_SIZE=65536
-PYTHON_VERSIONS=3.8,3.9,3.10,3.11,3.12
-
-# Rate Limiting
-MAX_SUBMISSIONS_PER_5SEC=1
-MAX_CONCURRENT_SUBMISSIONS=3
-MAX_JUDGING_QUEUE_SIZE=500
-
-# External Services
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_KEY=your-supabase-key
-
-# Logging
-LOG_LEVEL=info
-NODE_ENV=development
-```
-
-**접근 패턴**:
-
-```javascript
-// config/index.js
-const config = {
-  database: {
-    url: process.env.DATABASE_URL,
-  },
-  jwt: {
-    secret: process.env.JWT_SECRET,
-    expiresIn: process.env.JWT_EXPIRES_IN || "2h",
-  },
-  judging: {
-    timeout: parseInt(process.env.JUDGING_TIMEOUT) || 30000,
-    maxCodeSize: parseInt(process.env.MAX_CODE_SIZE) || 64 * 1024,
-  },
-};
-
-// 필수 환경 변수 검증
-function validateConfig() {
-  const required = ["DATABASE_URL", "JWT_SECRET"];
-  for (const key of required) {
-    if (!process.env[key]) {
-      throw new Error(`Missing required environment variable: ${key}`);
-    }
-  }
-}
-
-export default config;
-```
+- DATABASE_URL
+- JWT_SECRET
+- JUDGING_TIMEOUT
+- MAX_CODE_SIZE
+- PYTHON_VERSIONS
+- SUPABASE_URL
+- SUPABASE_KEY
 
 ### 5.2 보안 설정
 
 **CORS 설정**:
 
-```javascript
-// Backend (Express)
-const cors = require("cors");
-
-app.use(
-  cors({
-    origin:
-      process.env.NODE_ENV === "production"
-        ? "https://python-judge.vercel.app"
-        : "http://localhost:3000",
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
-```
+- 프로덕션: 허용된 도메인만
+- 개발: localhost 허용
+- credentials: true
 
 **보안 헤더**:
 
-```javascript
-const helmet = require("helmet");
-
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"], // React inline scripts
-        styleSrc: ["'self'", "'unsafe-inline'"], // Tailwind inline styles
-        imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'", process.env.SUPABASE_URL],
-      },
-    },
-    hsts: {
-      maxAge: 31536000,
-      includeSubDomains: true,
-      preload: true,
-    },
-  })
-);
-```
+- helmet 미들웨어 사용
+- Content Security Policy 설정
+- HSTS 설정
 
 **Rate Limiting**:
 
-```javascript
-const rateLimit = require("express-rate-limit");
-
-// 일반 API
-const apiLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1분
-  max: 60,
-  message: "Too many requests from this IP",
-});
-
-// 제출 API (더 엄격)
-const submissionLimiter = rateLimit({
-  windowMs: 5 * 1000, // 5초
-  max: 1,
-  message: "Please wait 5 seconds before submitting again",
-});
-
-app.use("/api/", apiLimiter);
-app.use("/api/submissions", submissionLimiter);
-```
+- 일반 API: 1분당 60회
+- 제출 API: 5초당 1회
 
 **입력 검증**:
 
-```javascript
-const { body, validationResult } = require("express-validator");
-
-// 제출 검증
-const validateSubmission = [
-  body("problem_id").isInt({ min: 1 }),
-  body("code")
-    .isString()
-    .isLength({ max: 64 * 1024 })
-    .withMessage("Code size exceeds 64KB"),
-  body("python_version")
-    .isIn(["3.8", "3.9", "3.10", "3.11", "3.12"])
-    .withMessage("Invalid Python version"),
-
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-    next();
-  },
-];
-
-router.post(
-  "/submissions",
-  authMiddleware,
-  validateSubmission,
-  submissionController.submit
-);
-```
+- express-validator 사용
+- 모든 입력 데이터 검증
+- 타입, 길이, 형식 검증
 
 ### 5.3 로깅 전략
 
 **로깅 레벨**:
 
-```
-ERROR: 시스템 오류, 즉시 대응 필요
-WARN:  비정상적이지만 처리 가능한 상황
-INFO:  중요한 비즈니스 이벤트 (로그인, 제출, 채점 완료)
-DEBUG: 개발 시 디버깅 정보
-```
+- ERROR: 시스템 오류, 즉시 대응 필요
+- WARN: 비정상적이지만 처리 가능한 상황
+- INFO: 중요한 비즈니스 이벤트
+- DEBUG: 개발 시 디버깅 정보
 
 **로거 설정**:
 
-```javascript
-// utils/logger.js
-const winston = require("winston");
+- winston 라이브러리 사용
+- 프로덕션: 파일 또는 외부 서비스
+- 개발: 콘솔 출력
 
-const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || "info",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.errors({ stack: true }),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      ),
-    }),
-    // 프로덕션: 파일 또는 외부 서비스
-    ...(process.env.NODE_ENV === "production"
-      ? [
-          new winston.transports.File({
-            filename: "error.log",
-            level: "error",
-          }),
-          new winston.transports.File({ filename: "combined.log" }),
-        ]
-      : []),
-  ],
-});
+**로깅 대상**:
 
-module.exports = logger;
-```
-
-**로깅 패턴**:
-
-```javascript
-// 요청 로깅
-app.use((req, res, next) => {
-  logger.info("Incoming request", {
-    method: req.method,
-    url: req.url,
-    userId: req.user?.id,
-    ip: req.ip,
-  });
-  next();
-});
-
-// 비즈니스 이벤트
-logger.info("Code submitted", {
-  submissionId: submission.id,
-  studentId: studentId,
-  problemId: problemId,
-});
-
-// 에러 로깅
-logger.error("Judging failed", {
-  submissionId: submission.id,
-  error: error.message,
-  stack: error.stack,
-});
-```
+- 요청/응답 로깅
+- 비즈니스 이벤트
+- 에러 로깅
 
 ### 5.4 모니터링 및 알림
 
 **헬스체크 엔드포인트**:
 
-```javascript
-// /api/health
-app.get("/api/health", async (req, res) => {
-  try {
-    // 데이터베이스 연결 확인
-    await db.query("SELECT 1");
-
-    res.json({
-      status: "healthy",
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      memory: process.memoryUsage(),
-      database: "connected",
-    });
-  } catch (error) {
-    res.status(503).json({
-      status: "unhealthy",
-      error: error.message,
-    });
-  }
-});
-```
+- /api/health 엔드포인트
+- 데이터베이스 연결 확인
+- 시스템 상태 반환
 
 **메트릭 수집**:
 
-```javascript
-// 채점 큐 모니터링
-function getJudgingQueueMetrics() {
-  return {
-    queueSize: judgingQueue.length,
-    maxQueueSize: MAX_QUEUE_SIZE,
-    utilizationPercent: (judgingQueue.length / MAX_QUEUE_SIZE) * 100,
-  };
-}
-
-// 주기적으로 로그
-setInterval(() => {
-  const metrics = getJudgingQueueMetrics();
-  logger.info("Queue metrics", metrics);
-
-  if (metrics.utilizationPercent > 80) {
-    logger.warn("Queue is nearly full", metrics);
-  }
-}, 60000); // 1분마다
-```
+- 채점 큐 모니터링
+- 시스템 리소스 모니터링
+- 주기적 로깅
 
 ---
 
@@ -1125,226 +456,42 @@ setInterval(() => {
 
 ### 6.1 React 프론트엔드 구조
 
-```
-frontend/
-├── public/
-│   ├── index.html
-│   ├── favicon.ico
-│   └── robots.txt
-│
-├── src/
-│   ├── api/                    # API 클라이언트
-│   │   ├── client.js           # Axios 인스턴스, 인터셉터
-│   │   ├── authApi.js          # 인증 관련 API
-│   │   ├── problemApi.js       # 문제 관련 API
-│   │   ├── submissionApi.js    # 제출 관련 API
-│   │   └── sessionApi.js       # 세션 관련 API
-│   │
-│   ├── components/             # 재사용 가능한 컴포넌트
-│   │   ├── common/             # 공통 UI 컴포넌트
-│   │   │   ├── Button.jsx
-│   │   │   ├── Input.jsx
-│   │   │   ├── Modal.jsx
-│   │   │   ├── Spinner.jsx
-│   │   │   └── Toast.jsx
-│   │   │
-│   │   ├── layout/             # 레이아웃 컴포넌트
-│   │   │   ├── Header.jsx
-│   │   │   ├── Sidebar.jsx
-│   │   │   ├── Footer.jsx
-│   │   │   └── MainLayout.jsx
-│   │   │
-│   │   ├── auth/               # 인증 컴포넌트
-│   │   │   ├── LoginForm.jsx
-│   │   │   ├── RegisterForm.jsx
-│   │   │   └── PasswordResetForm.jsx
-│   │   │
-│   │   ├── problems/           # 문제 관련 컴포넌트
-│   │   │   ├── ProblemCard.jsx
-│   │   │   ├── ProblemList.jsx
-│   │   │   ├── ProblemDetail.jsx
-│   │   │   ├── CategoryFilter.jsx
-│   │   │   └── TestCaseDisplay.jsx
-│   │   │
-│   │   ├── submissions/        # 제출 관련 컴포넌트
-│   │   │   ├── CodeEditor.jsx
-│   │   │   ├── SubmissionForm.jsx
-│   │   │   ├── SubmissionHistory.jsx
-│   │   │   ├── JudgingResult.jsx
-│   │   │   └── ResultBadge.jsx
-│   │   │
-│   │   └── sessions/           # 세션 관련 컴포넌트
-│   │       ├── SessionCard.jsx
-│   │       ├── Scoreboard.jsx
-│   │       └── SessionTimer.jsx
-│   │
-│   ├── pages/                  # 페이지 컴포넌트
-│   │   ├── student/            # 학생 페이지
-│   │   │   ├── LoginPage.jsx
-│   │   │   ├── RegisterPage.jsx
-│   │   │   ├── ProblemListPage.jsx
-│   │   │   ├── ProblemDetailPage.jsx
-│   │   │   ├── SubmissionHistoryPage.jsx
-│   │   │   ├── ScoreboardPage.jsx
-│   │   │   └── ProfilePage.jsx
-│   │   │
-│   │   └── admin/              # 관리자 페이지
-│   │       ├── AdminLoginPage.jsx
-│   │       ├── DashboardPage.jsx
-│   │       ├── ProblemManagementPage.jsx
-│   │       ├── SessionManagementPage.jsx
-│   │       ├── StudentManagementPage.jsx
-│   │       └── StatisticsPage.jsx
-│   │
-│   ├── hooks/                  # Custom Hooks
-│   │   ├── useAuth.js          # 인증 상태 관리
-│   │   ├── useProblem.js       # 문제 데이터 관리
-│   │   ├── useSubmission.js    # 제출 관리
-│   │   ├── useScoreboard.js    # 스코어보드 폴링
-│   │   ├── usePolling.js       # 범용 폴링 훅
-│   │   └── useToast.js         # 토스트 알림
-│   │
-│   ├── contexts/               # React Context
-│   │   ├── AuthContext.jsx     # 인증 컨텍스트
-│   │   └── ThemeContext.jsx    # 테마 컨텍스트 (다크모드 등)
-│   │
-│   ├── utils/                  # 유틸리티 함수
-│   │   ├── formatters.js       # 날짜, 숫자 포맷팅
-│   │   ├── validators.js       # 입력 검증 함수
-│   │   ├── constants.js        # 상수 정의
-│   │   └── helpers.js          # 기타 헬퍼 함수
-│   │
-│   ├── styles/                 # 글로벌 스타일
-│   │   ├── index.css           # Tailwind imports
-│   │   └── custom.css          # 커스텀 CSS
-│   │
-│   ├── App.jsx                 # 루트 컴포넌트
-│   ├── index.js                # 엔트리 포인트
-│   └── routes.jsx              # 라우팅 설정
-│
-├── .env.example                # 환경 변수 예시
-├── .eslintrc.js                # ESLint 설정
-├── .prettierrc                 # Prettier 설정
-├── tailwind.config.js          # Tailwind 설정
-├── package.json
-└── README.md
-```
+**주요 디렉토리**:
+
+- public/ - 정적 파일
+- src/api/ - API 클라이언트
+- src/components/ - 재사용 가능한 컴포넌트
+  - common/ - 공통 UI 컴포넌트
+  - layout/ - 레이아웃 컴포넌트
+  - auth/ - 인증 컴포넌트
+  - problems/ - 문제 관련 컴포넌트
+  - submissions/ - 제출 관련 컴포넌트
+  - sessions/ - 세션 관련 컴포넌트
+- src/pages/ - 페이지 컴포넌트
+  - student/ - 학생 페이지
+  - admin/ - 관리자 페이지
+- src/hooks/ - Custom Hooks
+- src/contexts/ - React Context
+- src/utils/ - 유틸리티 함수
+- src/styles/ - 글로벌 스타일
 
 ### 6.2 주요 패턴 설명
 
 **API 클라이언트 중앙화**:
 
-```javascript
-// api/client.js
-import axios from "axios";
-
-const client = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "http://localhost:4000/api",
-  timeout: 30000,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-// 요청 인터셉터: JWT 토큰 자동 추가
-client.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// 응답 인터셉터: 에러 처리
-client.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
-
-export default client;
-```
+- axios 인스턴스 생성
+- 요청 인터셉터: JWT 토큰 자동 추가
+- 응답 인터셉터: 에러 처리
 
 **Custom Hook 패턴**:
 
-```javascript
-// hooks/useSubmission.js
-import { useState } from "react";
-import { submitCode } from "../api/submissionApi";
-
-export function useSubmission() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
-
-  const submit = async (problemId, code, pythonVersion) => {
-    try {
-      setIsSubmitting(true);
-      setError(null);
-      const data = await submitCode(problemId, code, pythonVersion);
-      setResult(data);
-      return data;
-    } catch (err) {
-      setError(err.response?.data?.message || "Submission failed");
-      throw err;
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return { submit, isSubmitting, result, error };
-}
-```
+- 상태 관리 및 API 호출 로직 분리
+- 재사용 가능한 비즈니스 로직
 
 **폴링 훅**:
 
-```javascript
-// hooks/usePolling.js
-import { useState, useEffect, useRef } from "react";
-
-export function usePolling(fetchFunc, interval = 5000, enabled = true) {
-  const [data, setData] = useState(null);
-  const [error, setError] = useState(null);
-  const intervalRef = useRef(null);
-
-  useEffect(() => {
-    if (!enabled) return;
-
-    const fetch = async () => {
-      try {
-        const result = await fetchFunc();
-        setData(result);
-        setError(null);
-      } catch (err) {
-        setError(err);
-      }
-    };
-
-    fetch(); // 즉시 실행
-    intervalRef.current = setInterval(fetch, interval);
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [fetchFunc, interval, enabled]);
-
-  return { data, error };
-}
-
-// 사용 예시
-const { data: scoreboard } = usePolling(
-  () => fetchScoreboard(sessionId),
-  5000,
-  isSessionActive
-);
-```
+- 실시간 업데이트를 위한 폴링 구현
+- 스코어보드, 채점 상태 등에 활용
 
 ---
 
@@ -1352,431 +499,47 @@ const { data: scoreboard } = usePolling(
 
 ### 7.1 Node.js + Express 백엔드 구조
 
-```
-backend/
-├── src/
-│   ├── modules/                # 도메인 모듈
-│   │   ├── auth/               # 인증 모듈
-│   │   │   ├── controllers/
-│   │   │   │   └── authController.js
-│   │   │   ├── services/
-│   │   │   │   └── authService.js
-│   │   │   ├── middlewares/
-│   │   │   │   └── authMiddleware.js
-│   │   │   ├── validators/
-│   │   │   │   └── authValidators.js
-│   │   │   ├── routes.js
-│   │   │   └── index.js        # 모듈 공개 인터페이스
-│   │   │
-│   │   ├── users/              # 사용자 관리
-│   │   │   ├── controllers/
-│   │   │   │   ├── studentController.js
-│   │   │   │   └── adminController.js
-│   │   │   ├── services/
-│   │   │   │   ├── studentService.js
-│   │   │   │   └── adminService.js
-│   │   │   ├── repositories/
-│   │   │   │   ├── studentRepository.js
-│   │   │   │   └── adminRepository.js
-│   │   │   ├── models/
-│   │   │   │   ├── Student.js
-│   │   │   │   └── Admin.js
-│   │   │   ├── validators/
-│   │   │   │   └── userValidators.js
-│   │   │   ├── routes.js
-│   │   │   └── index.js
-│   │   │
-│   │   ├── problems/           # 문제 관리
-│   │   │   ├── controllers/
-│   │   │   │   ├── problemController.js
-│   │   │   │   └── testCaseController.js
-│   │   │   ├── services/
-│   │   │   │   ├── problemService.js
-│   │   │   │   └── testCaseService.js
-│   │   │   ├── repositories/
-│   │   │   │   ├── problemRepository.js
-│   │   │   │   └── testCaseRepository.js
-│   │   │   ├── models/
-│   │   │   │   ├── Problem.js
-│   │   │   │   └── TestCase.js
-│   │   │   ├── validators/
-│   │   │   │   └── problemValidators.js
-│   │   │   ├── routes.js
-│   │   │   └── index.js
-│   │   │
-│   │   ├── submissions/        # 제출 및 채점
-│   │   │   ├── controllers/
-│   │   │   │   └── submissionController.js
-│   │   │   ├── services/
-│   │   │   │   ├── submissionService.js
-│   │   │   │   └── judgingService.js
-│   │   │   ├── repositories/
-│   │   │   │   ├── submissionRepository.js
-│   │   │   │   └── judgingResultRepository.js
-│   │   │   ├── models/
-│   │   │   │   ├── Submission.js
-│   │   │   │   └── JudgingResult.js
-│   │   │   ├── engines/        # 채점 엔진
-│   │   │   │   ├── judgingEngine.js
-│   │   │   │   ├── sandboxRunner.js
-│   │   │   │   ├── astValidator.js
-│   │   │   │   └── outputComparer.js
-│   │   │   ├── validators/
-│   │   │   │   └── submissionValidators.js
-│   │   │   ├── routes.js
-│   │   │   └── index.js
-│   │   │
-│   │   ├── sessions/           # 교육 세션
-│   │   │   ├── controllers/
-│   │   │   │   ├── sessionController.js
-│   │   │   │   └── scoreboardController.js
-│   │   │   ├── services/
-│   │   │   │   ├── sessionService.js
-│   │   │   │   └── scoreboardService.js
-│   │   │   ├── repositories/
-│   │   │   │   ├── sessionRepository.js
-│   │   │   │   └── scoreboardRepository.js
-│   │   │   ├── models/
-│   │   │   │   ├── Session.js
-│   │   │   │   └── Scoreboard.js
-│   │   │   ├── validators/
-│   │   │   │   └── sessionValidators.js
-│   │   │   ├── routes.js
-│   │   │   └── index.js
-│   │   │
-│   │   └── audit/              # 감사 로그
-│   │       ├── controllers/
-│   │       │   └── auditController.js
-│   │       ├── services/
-│   │       │   └── auditService.js
-│   │       ├── repositories/
-│   │       │   └── auditRepository.js
-│   │       ├── models/
-│   │       │   └── AuditLog.js
-│   │       ├── routes.js
-│   │       └── index.js
-│   │
-│   ├── shared/                 # 공유 코드
-│   │   ├── database/           # 데이터베이스 설정
-│   │   │   ├── connection.js   # Supabase 연결
-│   │   │   ├── migrations/     # 마이그레이션 파일
-│   │   │   └── seeds/          # 시드 데이터
-│   │   │
-│   │   ├── middlewares/        # 공통 미들웨어
-│   │   │   ├── errorHandler.js
-│   │   │   ├── requestLogger.js
-│   │   │   ├── rateLimiter.js
-│   │   │   └── validateRequest.js
-│   │   │
-│   │   ├── errors/             # 에러 클래스
-│   │   │   ├── AppError.js
-│   │   │   ├── ValidationError.js
-│   │   │   ├── AuthenticationError.js
-│   │   │   └── index.js
-│   │   │
-│   │   ├── utils/              # 유틸리티 함수
-│   │   │   ├── logger.js
-│   │   │   ├── dateUtils.js
-│   │   │   ├── stringUtils.js
-│   │   │   ├── cryptoUtils.js
-│   │   │   └── validators.js
-│   │   │
-│   │   ├── constants/          # 전역 상수
-│   │   │   ├── httpStatus.js
-│   │   │   ├── judgingStatus.js
-│   │   │   ├── roles.js
-│   │   │   └── config.js
-│   │   │
-│   │   └── types/              # TypeScript 타입 (선택)
-│   │       └── common.ts
-│   │
-│   ├── config/                 # 환경 설정
-│   │   ├── index.js            # 통합 설정
-│   │   ├── database.js         # DB 설정
-│   │   ├── security.js         # 보안 설정
-│   │   └── judging.js          # 채점 설정
-│   │
-│   ├── routes/                 # 라우팅 통합
-│   │   └── index.js            # 모든 모듈 라우트 통합
-│   │
-│   ├── app.js                  # Express 앱 설정
-│   └── server.js               # 서버 시작 (로컬 개발용)
-│
-├── tests/                      # 테스트
-│   ├── unit/                   # 단위 테스트
-│   │   ├── services/
-│   │   ├── repositories/
-│   │   └── utils/
-│   │
-│   ├── integration/            # 통합 테스트
-│   │   └── api/
-│   │
-│   ├── e2e/                    # E2E 테스트
-│   │
-│   └── fixtures/               # 테스트 데이터
-│       ├── students.json
-│       ├── problems.json
-│       └── testCases.json
-│
-├── scripts/                    # 유틸리티 스크립트
-│   ├── seed.js                 # 데이터베이스 시드
-│   └── migrate.js              # 마이그레이션 실행
-│
-├── .env.example                # 환경 변수 예시
-├── .eslintrc.js                # ESLint 설정
-├── .prettierrc                 # Prettier 설정
-├── jest.config.js              # Jest 설정
-├── package.json
-└── README.md
-```
+**주요 디렉토리**:
+
+- src/modules/ - 도메인 모듈
+  - auth/ - 인증 모듈
+  - users/ - 사용자 관리
+  - problems/ - 문제 관리
+  - submissions/ - 제출 및 채점
+  - sessions/ - 교육 세션
+  - audit/ - 감사 로그
+- src/shared/ - 공유 코드
+  - database/ - 데이터베이스 설정
+  - middlewares/ - 공통 미들웨어
+  - errors/ - 에러 클래스
+  - utils/ - 유틸리티 함수
+  - constants/ - 전역 상수
+- src/config/ - 환경 설정
+- src/routes/ - 라우팅 통합
+- tests/ - 테스트
+  - unit/ - 단위 테스트
+  - integration/ - 통합 테스트
+  - e2e/ - E2E 테스트
 
 ### 7.2 모듈 구조 상세
 
 **각 모듈의 계층 구조**:
 
-```
-module/
-  controllers/      # HTTP 요청/응답 처리, 입력 검증
-  services/         # 비즈니스 로직, 트랜잭션 관리
-  repositories/     # 데이터베이스 접근 (CRUD)
-  models/           # 데이터 모델 (엔티티)
-  validators/       # 입력 검증 규칙
-  routes.js         # 라우팅 정의
-  index.js          # 공개 인터페이스
-```
-
-**예시 - Submission 모듈**:
-
-```javascript
-// controllers/submissionController.js
-const { submissionService } = require("../services/submissionService");
-const { validateSubmission } = require("../validators/submissionValidators");
-
-async function submit(req, res, next) {
-  try {
-    const { problem_id, code, python_version } = req.body;
-    const studentId = req.user.id; // authMiddleware에서 설정
-
-    const result = await submissionService.submitCode(
-      studentId,
-      problem_id,
-      code,
-      python_version
-    );
-
-    res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-}
-
-module.exports = { submit };
-```
-
-```javascript
-// services/submissionService.js
-const {
-  submissionRepository,
-} = require("../repositories/submissionRepository");
-const { judgingService } = require("./judgingService");
-const { problemService } = require("../../problems");
-
-class SubmissionService {
-  async submitCode(studentId, problemId, code, pythonVersion) {
-    // 1. 검증
-    await this._validateSubmission(studentId, problemId, code);
-
-    // 2. 제출 생성
-    const submission = await submissionRepository.create({
-      student_id: studentId,
-      problem_id: problemId,
-      code: code,
-      python_version: pythonVersion,
-      judging_status: "PENDING",
-    });
-
-    // 3. 채점 큐에 추가 (백그라운드)
-    judgingService.queueJudging(submission.id).catch((err) => {
-      logger.error("Failed to queue judging", {
-        submissionId: submission.id,
-        error: err,
-      });
-    });
-
-    return submission;
-  }
-
-  async _validateSubmission(studentId, problemId, code) {
-    // 제출 쿨타임 체크
-    const recentSubmission = await submissionRepository.findRecentByStudent(
-      studentId,
-      problemId,
-      5000 // 5초
-    );
-    if (recentSubmission) {
-      throw new ValidationError(
-        "Please wait 5 seconds before submitting again"
-      );
-    }
-
-    // 문제 존재 여부
-    const problem = await problemService.getProblemById(problemId);
-    if (!problem) {
-      throw new NotFoundError("Problem");
-    }
-
-    // 코드 크기
-    if (Buffer.byteLength(code, "utf8") > MAX_CODE_SIZE) {
-      throw new ValidationError(`Code size exceeds ${MAX_CODE_SIZE} bytes`);
-    }
-  }
-}
-
-module.exports = { submissionService: new SubmissionService() };
-```
-
-```javascript
-// repositories/submissionRepository.js
-const { supabase } = require("../../../shared/database/connection");
-
-class SubmissionRepository {
-  async create(data) {
-    const { data: submission, error } = await supabase
-      .from("submissions")
-      .insert(data)
-      .select()
-      .single();
-
-    if (error) throw new DatabaseError(error.message);
-    return submission;
-  }
-
-  async findById(id) {
-    const { data, error } = await supabase
-      .from("submissions")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    if (error) return null;
-    return data;
-  }
-
-  async findRecentByStudent(studentId, problemId, withinMs) {
-    const cutoffTime = new Date(Date.now() - withinMs).toISOString();
-
-    const { data, error } = await supabase
-      .from("submissions")
-      .select("*")
-      .eq("student_id", studentId)
-      .eq("problem_id", problemId)
-      .gte("submitted_at", cutoffTime)
-      .order("submitted_at", { ascending: false })
-      .limit(1)
-      .single();
-
-    return data;
-  }
-}
-
-module.exports = { submissionRepository: new SubmissionRepository() };
-```
-
-```javascript
-// routes.js
-const express = require("express");
-const router = express.Router();
-const { authMiddleware, roleMiddleware } = require("../../shared/middlewares");
-const { submissionController } = require("./controllers/submissionController");
-const { validateSubmission } = require("./validators/submissionValidators");
-
-router.post(
-  "/",
-  authMiddleware,
-  roleMiddleware(["student"]),
-  validateSubmission,
-  submissionController.submit
-);
-
-router.get("/history", authMiddleware, submissionController.getHistory);
-
-router.get("/:id", authMiddleware, submissionController.getById);
-
-module.exports = router;
-```
-
-```javascript
-// index.js (공개 인터페이스)
-const routes = require("./routes");
-const { submissionService } = require("./services/submissionService");
-
-module.exports = {
-  submissionRoutes: routes,
-  submissionService,
-};
-```
+- controllers/ - HTTP 요청/응답 처리, 입력 검증
+- services/ - 비즈니스 로직, 트랜잭션 관리
+- repositories/ - 데이터베이스 접근 (CRUD)
+- models/ - 데이터 모델 (엔티티)
+- validators/ - 입력 검증 규칙
+- routes.js - 라우팅 정의
+- index.js - 공개 인터페이스
 
 ### 7.3 라우팅 통합
 
-```javascript
-// routes/index.js
-const express = require("express");
-const router = express.Router();
+**라우팅 계층**:
 
-const { authRoutes } = require("../modules/auth");
-const { userRoutes } = require("../modules/users");
-const { problemRoutes } = require("../modules/problems");
-const { submissionRoutes } = require("../modules/submissions");
-const { sessionRoutes } = require("../modules/sessions");
-
-router.use("/auth", authRoutes);
-router.use("/users", userRoutes);
-router.use("/problems", problemRoutes);
-router.use("/submissions", submissionRoutes);
-router.use("/sessions", sessionRoutes);
-
-module.exports = router;
-```
-
-```javascript
-// app.js
-const express = require("express");
-const helmet = require("helmet");
-const cors = require("cors");
-const routes = require("./routes");
-const { errorHandler, requestLogger } = require("./shared/middlewares");
-
-const app = express();
-
-// 보안 미들웨어
-app.use(helmet());
-app.use(
-  cors({
-    origin: process.env.CORS_ORIGIN,
-    credentials: true,
-  })
-);
-
-// 파싱 미들웨어
-app.use(express.json({ limit: "1mb" }));
-app.use(express.urlencoded({ extended: true }));
-
-// 로깅
-app.use(requestLogger);
-
-// 헬스체크
-app.get("/health", (req, res) => {
-  res.json({ status: "healthy", timestamp: new Date().toISOString() });
-});
-
-// API 라우트
-app.use("/api", routes);
-
-// 에러 핸들러 (마지막)
-app.use(errorHandler);
-
-module.exports = app;
-```
+- routes/index.js - 모든 모듈 라우트 통합
+- app.js - Express 앱 설정
+- server.js - 서버 시작 (로컬 개발용)
 
 ---
 
@@ -1790,86 +553,18 @@ module.exports = app;
 
 **마이그레이션 파일 명명**:
 
-```
-migrations/
-  001_create_students_table.sql
-  002_create_problems_table.sql
-  003_create_submissions_table.sql
-  004_add_index_submissions_student_id.sql
-  005_alter_problems_add_visibility.sql
-```
-
-**예시**:
-
-```sql
--- migrations/001_create_students_table.sql
-CREATE TABLE students (
-  id SERIAL PRIMARY KEY,
-  military_id VARCHAR(20) UNIQUE NOT NULL,
-  login_id VARCHAR(50) UNIQUE NOT NULL,
-  name VARCHAR(100) NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
-  email VARCHAR(255),
-  group_info VARCHAR(100),
-  account_status VARCHAR(20) DEFAULT 'active',
-  created_at TIMESTAMP DEFAULT NOW(),
-  last_login TIMESTAMP
-);
-
-CREATE INDEX idx_students_military_id ON students(military_id);
-CREATE INDEX idx_students_login_id ON students(login_id);
-
--- Rollback
--- DROP TABLE IF EXISTS students;
-```
+- 순차적 번호_설명.sql
+- 예: 001_create_students_table.sql
 
 ### 8.2 시드 데이터
 
 **시드 전략**: 개발/테스트 환경용 초기 데이터 제공
 
-```javascript
-// scripts/seed.js
-const { supabase } = require("../src/shared/database/connection");
+**시드 데이터 종류**:
 
-async function seedDatabase() {
-  // 관리자 계정
-  await supabase.from("administrators").insert([
-    {
-      login_id: "admin",
-      name: "Administrator",
-      password_hash: await bcrypt.hash("admin123", 10),
-      role_level: "super_admin",
-    },
-  ]);
-
-  // 테스트 학생
-  await supabase.from("students").insert([
-    {
-      military_id: "12345",
-      login_id: "student1",
-      name: "Test Student",
-      password_hash: await bcrypt.hash("password", 10),
-    },
-  ]);
-
-  // 샘플 문제
-  await supabase.from("problems").insert([
-    {
-      title: "Hello World",
-      description: 'Print "Hello, World!"',
-      category: "basic",
-      difficulty: 1,
-      time_limit: 2,
-      memory_limit: 256,
-      author_id: 1,
-    },
-  ]);
-
-  console.log("Database seeded successfully");
-}
-
-seedDatabase().catch(console.error);
-```
+- 관리자 계정
+- 테스트 학생
+- 샘플 문제
 
 ---
 
@@ -1877,144 +572,28 @@ seedDatabase().catch(console.error);
 
 ### 9.1 Vercel 배포 설정
 
-**vercel.json** (Backend):
+**Backend vercel.json**:
 
-```json
-{
-  "version": 2,
-  "builds": [
-    {
-      "src": "src/server.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "src/server.js"
-    },
-    {
-      "src": "/health",
-      "dest": "src/server.js"
-    }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
-}
-```
+- builds: @vercel/node
+- routes: API 라우팅 설정
+- env: 환경 변수
 
-**vercel.json** (Frontend):
+**Frontend vercel.json**:
 
-```json
-{
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
-}
-```
+- rewrites: SPA 라우팅 설정
 
 ### 9.2 GitHub Actions CI/CD
 
-**.github/workflows/ci.yml**:
+**CI Pipeline**:
 
-```yaml
-name: CI
+- Backend: lint, test
+- Frontend: lint, test, build
 
-on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main, develop]
+**Deploy Pipeline**:
 
-jobs:
-  test-backend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "18"
-
-      - name: Install dependencies
-        working-directory: ./backend
-        run: npm ci
-
-      - name: Run linter
-        working-directory: ./backend
-        run: npm run lint
-
-      - name: Run tests
-        working-directory: ./backend
-        run: npm test
-        env:
-          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
-
-  test-frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "18"
-
-      - name: Install dependencies
-        working-directory: ./frontend
-        run: npm ci
-
-      - name: Run linter
-        working-directory: ./frontend
-        run: npm run lint
-
-      - name: Run tests
-        working-directory: ./frontend
-        run: npm test
-
-      - name: Build
-        working-directory: ./frontend
-        run: npm run build
-```
-
-**.github/workflows/deploy.yml**:
-
-```yaml
-name: Deploy to Vercel
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Deploy Backend to Vercel
-        uses: amondnet/vercel-action@v20
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_BACKEND_PROJECT_ID }}
-          working-directory: ./backend
-          vercel-args: "--prod"
-
-      - name: Deploy Frontend to Vercel
-        uses: amondnet/vercel-action@v20
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_FRONTEND_PROJECT_ID }}
-          working-directory: ./frontend
-          vercel-args: "--prod"
-```
+- main 브랜치 푸시 시 자동 배포
+- Backend → Vercel
+- Frontend → Vercel
 
 ---
 
@@ -2059,13 +638,11 @@ jobs:
 **Phase 2 확장 시나리오** (50명 이상):
 
 1. **비동기 채점 큐 도입**
-
    - Redis + Bull 또는 AWS SQS
    - 채점 워커 프로세스 분리
    - 우선순위 큐 (세션 내 제출 우선)
 
 2. **캐시 레이어 추가**
-
    - Redis: 스코어보드, 문제 목록, 세션 정보
    - TTL 전략: 스코어보드 5초, 문제 목록 1시간
 
