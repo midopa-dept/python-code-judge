@@ -49,7 +49,7 @@ while True:
   test('메모리 제한을 초과하면 MLE를 반환한다', async () => {
     const code = `
 data = []
-for _ in range(40):
+for _ in range(200):
     data.append('x' * 1024 * 1024)
 print(len(data))
 `;
