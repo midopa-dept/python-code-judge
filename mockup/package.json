@@ -1,0 +1,16 @@
+{
+  "name": "python-judge-mock-api",
+  "version": "1.0.0",
+  "description": "Python Judge Mock API Server based on Swagger specification",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "nodemon": "^3.1.11",
+    "openapi-mock-express-middleware": "^4.4.0",
+    "swagger-ui-express": "^5.0.1"
+  }
+}

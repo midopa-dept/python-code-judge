@@ -1,0 +1,238 @@
+# ============================================
+# Python Judge 프로젝트 .gitignore
+# ============================================
+
+# ==================== Node.js ====================
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Package manager lock files (선택적으로 커밋 가능)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+*.local
+
+# ==================== Python ====================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+.pyenv
+
+# Python test coverage
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.tox/
+
+# ==================== Environment Variables ====================
+# Sensitive files - NEVER commit
+.env
+.env.*
+.env.local
+.env.development
+.env.test
+.env.production
+.env.*.local
+
+# Backup env files
+*.env.backup
+
+# ==================== Database ====================
+# Database files (SQLite, etc.)
+*.db
+*.sqlite
+*.sqlite3
+
+# Database dumps (민감한 데이터 포함 가능)
+*.sql.dump
+*.dump
+
+# PostgreSQL
+*.pgsql
+
+# ==================== Logs ====================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pnpm-debug.log*
+
+# ==================== OS Files ====================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ==================== IDEs / Editors ====================
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# IntelliJ IDEA / WebStorm
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*.swn
+.*.sw[a-p]
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# ==================== Testing ====================
+coverage/
+.nyc_output/
+.jest/
+
+# ==================== Temporary Files ====================
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+tmp/
+temp/
+
+# ==================== Build / Deploy ====================
+# Vercel
+.vercel
+
+# Next.js (만약 사용할 경우)
+.next/
+out/
+
+# Nuxt.js
+.nuxt/
+
+# ==================== Documentation ====================
+# Generated documentation (auto-generated)
+# docs/api/ (API 문서는 필요에 따라 커밋)
+
+# ==================== Security ====================
+# Credentials
+credentials.json
+secrets.json
+*.pem
+*.key
+*.cert
+*.crt
+
+# JWT secrets
+jwt.secret
+
+# ==================== Mock / Development ====================
+# Mock server generated files
+mockup/mock-data/
+
+# ==================== Miscellaneous ====================
+# Cache directories
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# ==================== Custom ====================
+# 프로젝트 특화 파일들
+
+# 채점 엔진 임시 디렉토리
+judging-temp/
+submissions-temp/
+
+# 업로드된 코드 파일 (임시)
+uploads/
+
+# 테스트 제출 파일
+test-submissions/
+
+# ==================== Keep These ====================
+# 아래 파일/디렉토리는 반드시 커밋됨
+# !docs/
+# !swagger/
+# !database/schema.sql
+# !README.md
+# !CLAUDE.md
+# !GEMINI.md
+# !AGENTS.md
