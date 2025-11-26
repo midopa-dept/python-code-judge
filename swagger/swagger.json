@@ -1,0 +1,2646 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Python Judge API",
+    "version": "1.0.0",
+    "description": "Python 알고리즘 코딩 테스트 자동 채점 플랫폼 API 스펙",
+    "contact": {
+      "name": "Python Judge Team",
+      "email": "admin@python-judge.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://python-judge.vercel.app/api",
+      "description": "Production 서버 (Vercel)"
+    },
+    {
+      "url": "http://localhost:3000/api",
+      "description": "Development 로컬 서버"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "인증 및 사용자 계정 관리"
+    },
+    {
+      "name": "Users",
+      "description": "사용자 정보 조회 및 관리"
+    },
+    {
+      "name": "Problems",
+      "description": "문제 및 테스트 케이스 관리"
+    },
+    {
+      "name": "Submissions",
+      "description": "코드 제출 및 채점 관리"
+    },
+    {
+      "name": "Sessions",
+      "description": "교육 세션 관리"
+    },
+    {
+      "name": "Audit Logs",
+      "description": "감사 로그 조회"
+    },
+    {
+      "name": "Health",
+      "description": "시스템 상태 확인"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/auth/signup": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "학생 회원가입",
+        "description": "학생이 군번, ID, 이름, 비밀번호로 회원가입합니다. 군번과 로그인 ID는 중복 불가합니다.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignupRequest"
+              },
+              "example": {
+                "militaryId": "12345678",
+                "loginId": "kim_soldier",
+                "name": "김병장",
+                "password": "securePassword123!",
+                "email": "kim@example.com",
+                "groupInfo": "1소대"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "회원가입 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                },
+                "example": {
+                  "success": true,
+                  "message": "회원가입이 완료되었습니다.",
+                  "data": {
+                    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                    "user": {
+                      "id": 1,
+                      "loginId": "kim_soldier",
+                      "name": "김병장",
+                      "role": "student"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "409": {
+            "description": "군번 또는 로그인 ID 중복",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "이미 등록된 군번 또는 로그인 ID입니다.",
+                  "errorCode": "DUPLICATE_USER"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "로그인 (학생/관리자)",
+        "description": "로그인 ID와 비밀번호로 인증하고 JWT 토큰을 발급받습니다. 토큰 유효기간은 2시간입니다.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              },
+              "example": {
+                "loginId": "kim_soldier",
+                "password": "securePassword123!"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "로그인 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                },
+                "example": {
+                  "success": true,
+                  "message": "로그인 성공",
+                  "data": {
+                    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                    "expiresIn": 7200,
+                    "user": {
+                      "id": 1,
+                      "loginId": "kim_soldier",
+                      "name": "김병장",
+                      "role": "student"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "비밀번호 찾기",
+        "description": "군번과 이름으로 본인 인증 후 비밀번호를 재설정합니다.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordRequest"
+              },
+              "example": {
+                "militaryId": "12345678",
+                "name": "김병장",
+                "newPassword": "newSecurePassword456!"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "비밀번호 재설정 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "success": true,
+                  "message": "비밀번호가 성공적으로 변경되었습니다."
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/auth/change-password": {
+      "put": {
+        "tags": ["Authentication"],
+        "summary": "비밀번호 변경",
+        "description": "로그인한 사용자가 기존 비밀번호를 확인하고 새 비밀번호로 변경합니다.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordRequest"
+              },
+              "example": {
+                "currentPassword": "oldPassword123!",
+                "newPassword": "newPassword456!"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "비밀번호 변경 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/users/students": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "학생 목록 조회 (관리자 전용)",
+        "description": "전체 학생 목록을 조회합니다. 관리자 권한이 필요합니다.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "페이지 번호",
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "페이지당 항목 수",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "groupInfo",
+            "in": "query",
+            "description": "소속 그룹 필터",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accountStatus",
+            "in": "query",
+            "description": "계정 상태 필터",
+            "schema": {
+              "type": "string",
+              "enum": ["active", "suspended", "deleted"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "학생 목록 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "students": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Student"
+                          }
+                        },
+                        "pagination": {
+                          "$ref": "#/components/schemas/Pagination"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/users/students/{id}": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "학생 상세 조회",
+        "description": "특정 학생의 상세 정보를 조회합니다. 본인 또는 관리자만 조회 가능합니다.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "학생 ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "학생 상세 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/StudentDetail"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/problems": {
+      "get": {
+        "tags": ["Problems"],
+        "summary": "문제 목록 조회",
+        "description": "카테고리와 난이도로 필터링된 문제 목록을 조회합니다. 공개 상태 문제만 학생에게 표시됩니다.",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "description": "카테고리 필터",
+            "schema": {
+              "type": "string",
+              "enum": ["조건문", "반복문", "리스트", "딕셔너리", "문자열", "함수", "재귀", "정렬", "파일 I/O", "예외 처리", "종합"]
+            }
+          },
+          {
+            "name": "difficulty",
+            "in": "query",
+            "description": "난이도 필터 (1-5)",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "문제 목록 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "problems": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ProblemSummary"
+                          }
+                        },
+                        "pagination": {
+                          "$ref": "#/components/schemas/Pagination"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Problems"],
+        "summary": "문제 등록 (관리자 전용)",
+        "description": "새로운 알고리즘 문제를 등록합니다. 관리자 권한이 필요합니다.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProblemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "문제 등록 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "문제가 성공적으로 등록되었습니다."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "problemId": {
+                          "type": "integer",
+                          "example": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/problems/{id}": {
+      "get": {
+        "tags": ["Problems"],
+        "summary": "문제 상세 조회",
+        "description": "문제 설명, 제약 조건, 공개 테스트 케이스를 포함한 상세 정보를 조회합니다.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "문제 ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "문제 상세 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ProblemDetail"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Problems"],
+        "summary": "문제 수정 (관리자 전용)",
+        "description": "기존 문제의 정보를 수정합니다.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProblemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "문제 수정 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Problems"],
+        "summary": "문제 삭제 (관리자 전용)",
+        "description": "문제를 삭제합니다. 제출 이력이 있는 경우 삭제가 제한됩니다.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "문제 삭제 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "제출 이력이 있어 삭제 불가",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/problems/{id}/test-cases": {
+      "post": {
+        "tags": ["Problems"],
+        "summary": "테스트 케이스 추가 (관리자 전용)",
+        "description": "문제에 새로운 테스트 케이스를 추가합니다.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "문제 ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTestCaseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "테스트 케이스 추가 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "testCaseId": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/problems/{id}/test-cases/{testCaseId}": {
+      "put": {
+        "tags": ["Problems"],
+        "summary": "테스트 케이스 수정 (관리자 전용)",
+        "description": "기존 테스트 케이스를 수정합니다.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "testCaseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTestCaseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "테스트 케이스 수정 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Problems"],
+        "summary": "테스트 케이스 삭제 (관리자 전용)",
+        "description": "테스트 케이스를 삭제합니다.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "testCaseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "테스트 케이스 삭제 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/submissions": {
+      "get": {
+        "tags": ["Submissions"],
+        "summary": "제출 이력 조회",
+        "description": "학생별 또는 문제별 제출 이력을 조회합니다. 학생은 본인 이력만, 관리자는 전체 조회 가능합니다.",
+        "parameters": [
+          {
+            "name": "studentId",
+            "in": "query",
+            "description": "학생 ID 필터",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "problemId",
+            "in": "query",
+            "description": "문제 ID 필터",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "sessionId",
+            "in": "query",
+            "description": "세션 ID 필터",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "채점 결과 필터",
+            "schema": {
+              "type": "string",
+              "enum": ["AC", "WA", "TLE", "RE", "SE", "MLE"]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "제출 이력 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "submissions": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/SubmissionSummary"
+                          }
+                        },
+                        "pagination": {
+                          "$ref": "#/components/schemas/Pagination"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Submissions"],
+        "summary": "코드 제출",
+        "description": "Python 코드를 제출하여 자동 채점을 요청합니다. 5초 이내 동일 문제 중복 제출이 차단됩니다.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSubmissionRequest"
+              },
+              "example": {
+                "problemId": 1,
+                "code": "n = int(input())\nprint('Hello, World!')",
+                "pythonVersion": "3.10",
+                "sessionId": 5
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "코드 제출 성공 (채점 진행중)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "코드가 제출되었습니다. 채점이 진행 중입니다."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "submissionId": {
+                          "type": "integer",
+                          "example": 123
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["pending", "judging"],
+                          "example": "judging"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "코드 검증 실패 (금지 모듈 사용, 크기 초과 등)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "금지된 모듈이 감지되었습니다: os",
+                  "errorCode": "FORBIDDEN_MODULE"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
+    },
+    "/submissions/{id}": {
+      "get": {
+        "tags": ["Submissions"],
+        "summary": "제출 상세 조회",
+        "description": "특정 제출의 상세 정보를 조회합니다. 제출한 학생 본인 또는 관리자만 조회 가능합니다.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "제출 ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "제출 상세 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SubmissionDetail"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/submissions/{id}/result": {
+      "get": {
+        "tags": ["Submissions"],
+        "summary": "채점 결과 상세 조회",
+        "description": "제출의 채점 결과 상세 정보를 조회합니다. 통과 케이스 수, 실행 시간, 메모리 사용량, 에러 메시지를 포함합니다.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "제출 ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "채점 결과 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/JudgingResult"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/sessions": {
+      "get": {
+        "tags": ["Sessions"],
+        "summary": "세션 목록 조회",
+        "description": "교육 세션 목록을 조회합니다. 학생은 본인이 참여한 세션만, 관리자는 전체 조회 가능합니다.",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "세션 상태 필터",
+            "schema": {
+              "type": "string",
+              "enum": ["scheduled", "active", "ended", "cancelled"]
+            }
+          },
+          {
+            "name": "sessionType",
+            "in": "query",
+            "description": "세션 타입 필터",
+            "schema": {
+              "type": "string",
+              "enum": ["regular", "exam", "practice"]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "세션 목록 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "sessions": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/SessionSummary"
+                          }
+                        },
+                        "pagination": {
+                          "$ref": "#/components/schemas/Pagination"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Sessions"],
+        "summary": "세션 생성 (관리자 전용)",
+        "description": "새로운 교육 세션을 생성합니다.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSessionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "세션 생성 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "세션이 성공적으로 생성되었습니다."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "sessionId": {
+                          "type": "integer",
+                          "example": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/sessions/{id}": {
+      "get": {
+        "tags": ["Sessions"],
+        "summary": "세션 상세 조회",
+        "description": "세션의 상세 정보, 할당된 학생 및 문제 목록을 조회합니다.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "세션 ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "세션 상세 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SessionDetail"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/sessions/{id}/status": {
+      "put": {
+        "tags": ["Sessions"],
+        "summary": "세션 상태 변경 (관리자 전용)",
+        "description": "세션을 시작하거나 종료합니다.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["active", "ended", "cancelled"],
+                    "description": "변경할 세션 상태"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "세션 상태 변경 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/sessions/{id}/students": {
+      "post": {
+        "tags": ["Sessions"],
+        "summary": "세션에 학생 할당 (관리자 전용)",
+        "description": "세션에 참여할 학생들을 할당합니다.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["studentIds"],
+                "properties": {
+                  "studentIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    },
+                    "description": "할당할 학생 ID 목록",
+                    "example": [1, 2, 3, 4, 5]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "학생 할당 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/sessions/{id}/problems": {
+      "post": {
+        "tags": ["Sessions"],
+        "summary": "세션에 문제 할당 (관리자 전용)",
+        "description": "세션에 출제할 문제들을 할당합니다.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["problems"],
+                "properties": {
+                  "problems": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["problemId", "order"],
+                      "properties": {
+                        "problemId": {
+                          "type": "integer"
+                        },
+                        "order": {
+                          "type": "integer",
+                          "description": "문제 순서"
+                        }
+                      }
+                    },
+                    "example": [
+                      {"problemId": 1, "order": 1},
+                      {"problemId": 5, "order": 2},
+                      {"problemId": 10, "order": 3}
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "문제 할당 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/sessions/{id}/reset": {
+      "delete": {
+        "tags": ["Sessions"],
+        "summary": "세션 초기화 (관리자 전용)",
+        "description": "세션의 제출 이력과 스코어보드를 초기화합니다. 복구 불가능하므로 주의가 필요합니다.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "세션 초기화 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "세션이 성공적으로 초기화되었습니다. 제출 이력 및 스코어보드가 삭제되었습니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/sessions/{id}/scoreboard": {
+      "get": {
+        "tags": ["Sessions"],
+        "summary": "스코어보드 조회",
+        "description": "세션의 실시간 학생 순위 및 점수를 조회합니다. 클라이언트에서 3-5초 간격으로 폴링하여 실시간 업데이트를 구현합니다.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "세션 ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "스코어보드 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "scoreboard": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ScoreboardEntry"
+                          }
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "description": "마지막 업데이트 시각"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/audit-logs": {
+      "get": {
+        "tags": ["Audit Logs"],
+        "summary": "감사 로그 조회 (최고관리자 전용)",
+        "description": "시스템의 중요 행위 기록을 조회합니다. super_admin 권한이 필요합니다.",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "description": "사용자 ID 필터",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "actionType",
+            "in": "query",
+            "description": "행위 타입 필터",
+            "schema": {
+              "type": "string",
+              "enum": ["login", "create", "update", "delete", "submit", "access_denied"]
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "description": "시작 날짜 (YYYY-MM-DD)",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "description": "종료 날짜 (YYYY-MM-DD)",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "감사 로그 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "logs": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/AuditLog"
+                          }
+                        },
+                        "pagination": {
+                          "$ref": "#/components/schemas/Pagination"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "시스템 상태 확인",
+        "description": "서버 및 데이터베이스의 상태를 확인합니다.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "시스템 정상",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "services": {
+                      "type": "object",
+                      "properties": {
+                        "database": {
+                          "type": "string",
+                          "enum": ["ok", "error"],
+                          "example": "ok"
+                        },
+                        "judge_engine": {
+                          "type": "string",
+                          "enum": ["ok", "error"],
+                          "example": "ok"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "서비스 이용 불가",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "데이터베이스 연결 실패"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT 인증 토큰 (유효기간 2시간). 로그인 후 받은 토큰을 Authorization 헤더에 'Bearer {token}' 형식으로 전달합니다."
+      }
+    },
+    "schemas": {
+      "SignupRequest": {
+        "type": "object",
+        "required": ["militaryId", "loginId", "name", "password"],
+        "properties": {
+          "militaryId": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 20,
+            "pattern": "^[a-zA-Z0-9-]+$",
+            "description": "군번 (영문/숫자/하이픈, 5-20자)",
+            "example": "12345678"
+          },
+          "loginId": {
+            "type": "string",
+            "minLength": 4,
+            "maxLength": 20,
+            "description": "로그인 ID (4-20자)",
+            "example": "kim_soldier"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 50,
+            "description": "이름 (2-50자)",
+            "example": "김병장"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 100,
+            "description": "비밀번호 (8-100자)",
+            "example": "securePassword123!"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "이메일 (선택)",
+            "example": "kim@example.com"
+          },
+          "groupInfo": {
+            "type": "string",
+            "maxLength": 50,
+            "description": "소속 그룹 (선택)",
+            "example": "1소대"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["loginId", "password"],
+        "properties": {
+          "loginId": {
+            "type": "string",
+            "description": "로그인 ID",
+            "example": "kim_soldier"
+          },
+          "password": {
+            "type": "string",
+            "description": "비밀번호",
+            "example": "securePassword123!"
+          }
+        }
+      },
+      "ResetPasswordRequest": {
+        "type": "object",
+        "required": ["militaryId", "name", "newPassword"],
+        "properties": {
+          "militaryId": {
+            "type": "string",
+            "description": "군번",
+            "example": "12345678"
+          },
+          "name": {
+            "type": "string",
+            "description": "이름",
+            "example": "김병장"
+          },
+          "newPassword": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 100,
+            "description": "새 비밀번호",
+            "example": "newSecurePassword456!"
+          }
+        }
+      },
+      "ChangePasswordRequest": {
+        "type": "object",
+        "required": ["currentPassword", "newPassword"],
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "description": "현재 비밀번호"
+          },
+          "newPassword": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 100,
+            "description": "새 비밀번호"
+          }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "token": {
+                "type": "string",
+                "description": "JWT 토큰"
+              },
+              "expiresIn": {
+                "type": "integer",
+                "description": "토큰 유효기간 (초)",
+                "example": 7200
+              },
+              "user": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  },
+                  "loginId": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": ["student", "admin", "super_admin"]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Student": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "militaryId": {
+            "type": "string",
+            "example": "12345678"
+          },
+          "loginId": {
+            "type": "string",
+            "example": "kim_soldier"
+          },
+          "name": {
+            "type": "string",
+            "example": "김병장"
+          },
+          "email": {
+            "type": "string",
+            "example": "kim@example.com"
+          },
+          "groupInfo": {
+            "type": "string",
+            "example": "1소대"
+          },
+          "accountStatus": {
+            "type": "string",
+            "enum": ["active", "suspended", "deleted"],
+            "example": "active"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastLogin": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "StudentDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Student"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "statistics": {
+                "type": "object",
+                "properties": {
+                  "totalSubmissions": {
+                    "type": "integer",
+                    "description": "총 제출 수",
+                    "example": 47
+                  },
+                  "solvedProblems": {
+                    "type": "integer",
+                    "description": "해결한 문제 수",
+                    "example": 35
+                  },
+                  "accuracyRate": {
+                    "type": "number",
+                    "format": "float",
+                    "description": "정답률 (%)",
+                    "example": 74.47
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "CreateProblemRequest": {
+        "type": "object",
+        "required": ["title", "description", "category", "difficulty", "timeLimit"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "문제 제목",
+            "example": "FizzBuzz"
+          },
+          "description": {
+            "type": "string",
+            "description": "문제 설명 (마크다운)",
+            "example": "1부터 N까지의 수를 출력하되, 3의 배수면 Fizz, 5의 배수면 Buzz, 15의 배수면 FizzBuzz를 출력하세요."
+          },
+          "category": {
+            "type": "string",
+            "enum": ["조건문", "반복문", "리스트", "딕셔너리", "문자열", "함수", "재귀", "정렬", "파일 I/O", "예외 처리", "종합"],
+            "example": "조건문"
+          },
+          "difficulty": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "난이도 (1-5)",
+            "example": 2
+          },
+          "timeLimit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10,
+            "description": "시간 제한 (초)",
+            "example": 2
+          },
+          "memoryLimit": {
+            "type": "integer",
+            "default": 256,
+            "description": "메모리 제한 (MB)",
+            "example": 256
+          },
+          "visibility": {
+            "type": "string",
+            "enum": ["public", "private", "draft"],
+            "default": "draft",
+            "description": "공개 상태",
+            "example": "public"
+          }
+        }
+      },
+      "UpdateProblemRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["조건문", "반복문", "리스트", "딕셔너리", "문자열", "함수", "재귀", "정렬", "파일 I/O", "예외 처리", "종합"]
+          },
+          "difficulty": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "timeLimit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10
+          },
+          "memoryLimit": {
+            "type": "integer"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": ["public", "private", "draft"]
+          }
+        }
+      },
+      "ProblemSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "title": {
+            "type": "string",
+            "example": "FizzBuzz"
+          },
+          "category": {
+            "type": "string",
+            "example": "조건문"
+          },
+          "difficulty": {
+            "type": "integer",
+            "example": 2
+          },
+          "accuracyRate": {
+            "type": "number",
+            "format": "float",
+            "description": "정답률 (%)",
+            "example": 85.5
+          },
+          "submissionCount": {
+            "type": "integer",
+            "description": "총 제출 수",
+            "example": 120
+          },
+          "isSolved": {
+            "type": "boolean",
+            "description": "현재 사용자가 해결했는지 여부",
+            "example": true
+          }
+        }
+      },
+      "ProblemDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemSummary"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "description": {
+                "type": "string",
+                "description": "문제 설명 (마크다운)"
+              },
+              "timeLimit": {
+                "type": "integer",
+                "description": "시간 제한 (초)",
+                "example": 2
+              },
+              "memoryLimit": {
+                "type": "integer",
+                "description": "메모리 제한 (MB)",
+                "example": 256
+              },
+              "publicTestCases": {
+                "type": "array",
+                "description": "공개 테스트 케이스 (1-3개)",
+                "items": {
+                  "$ref": "#/components/schemas/TestCase"
+                }
+              },
+              "authorName": {
+                "type": "string",
+                "description": "출제자 이름",
+                "example": "김대위"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        ]
+      },
+      "TestCase": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "inputData": {
+            "type": "string",
+            "description": "입력 데이터",
+            "example": "15"
+          },
+          "expectedOutput": {
+            "type": "string",
+            "description": "예상 출력",
+            "example": "1\n2\nFizz\n4\nBuzz\n...\nFizzBuzz"
+          },
+          "isPublic": {
+            "type": "boolean",
+            "description": "공개 여부",
+            "example": true
+          }
+        }
+      },
+      "CreateTestCaseRequest": {
+        "type": "object",
+        "required": ["inputData", "expectedOutput", "isPublic"],
+        "properties": {
+          "inputData": {
+            "type": "string",
+            "description": "입력 데이터"
+          },
+          "expectedOutput": {
+            "type": "string",
+            "description": "예상 출력"
+          },
+          "isPublic": {
+            "type": "boolean",
+            "description": "공개 여부",
+            "example": false
+          },
+          "order": {
+            "type": "integer",
+            "description": "실행 순서",
+            "example": 1
+          }
+        }
+      },
+      "UpdateTestCaseRequest": {
+        "type": "object",
+        "properties": {
+          "inputData": {
+            "type": "string"
+          },
+          "expectedOutput": {
+            "type": "string"
+          },
+          "isPublic": {
+            "type": "boolean"
+          },
+          "order": {
+            "type": "integer"
+          }
+        }
+      },
+      "CreateSubmissionRequest": {
+        "type": "object",
+        "required": ["problemId", "code", "pythonVersion"],
+        "properties": {
+          "problemId": {
+            "type": "integer",
+            "description": "문제 ID",
+            "example": 1
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 65536,
+            "description": "제출 코드 (최대 64KB)",
+            "example": "n = int(input())\nfor i in range(1, n+1):\n    if i % 15 == 0:\n        print('FizzBuzz')\n    elif i % 3 == 0:\n        print('Fizz')\n    elif i % 5 == 0:\n        print('Buzz')\n    else:\n        print(i)"
+          },
+          "pythonVersion": {
+            "type": "string",
+            "enum": ["3.8", "3.9", "3.10", "3.11", "3.12"],
+            "description": "Python 버전",
+            "example": "3.10"
+          },
+          "sessionId": {
+            "type": "integer",
+            "description": "세션 ID (선택)",
+            "example": 5
+          }
+        }
+      },
+      "SubmissionSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 123
+          },
+          "problemId": {
+            "type": "integer",
+            "example": 1
+          },
+          "problemTitle": {
+            "type": "string",
+            "example": "FizzBuzz"
+          },
+          "studentName": {
+            "type": "string",
+            "description": "제출한 학생 이름 (관리자만 표시)",
+            "example": "김병장"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["AC", "WA", "TLE", "RE", "SE", "MLE"],
+            "description": "채점 결과 상태",
+            "example": "AC"
+          },
+          "executionTime": {
+            "type": "integer",
+            "description": "실행 시간 (ms)",
+            "example": 50
+          },
+          "memoryUsage": {
+            "type": "integer",
+            "description": "메모리 사용량 (MB)",
+            "example": 12
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SubmissionDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SubmissionSummary"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "제출한 코드"
+              },
+              "codeSize": {
+                "type": "integer",
+                "description": "코드 크기 (bytes)",
+                "example": 256
+              },
+              "pythonVersion": {
+                "type": "string",
+                "example": "3.10"
+              },
+              "sessionId": {
+                "type": "integer",
+                "description": "세션 ID (해당 세션에서 제출한 경우)"
+              }
+            }
+          }
+        ]
+      },
+      "JudgingResult": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "submissionId": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["AC", "WA", "TLE", "RE", "SE", "MLE"],
+            "description": "최종 채점 상태",
+            "example": "AC"
+          },
+          "passedCases": {
+            "type": "integer",
+            "description": "통과한 테스트 케이스 수",
+            "example": 12
+          },
+          "totalCases": {
+            "type": "integer",
+            "description": "전체 테스트 케이스 수",
+            "example": 12
+          },
+          "executionTime": {
+            "type": "integer",
+            "description": "실행 시간 (ms)",
+            "example": 50
+          },
+          "memoryUsage": {
+            "type": "integer",
+            "description": "메모리 사용량 (MB)",
+            "example": 12
+          },
+          "errorMessage": {
+            "type": "string",
+            "description": "에러 메시지 (RE 또는 SE인 경우)",
+            "example": "ZeroDivisionError: division by zero"
+          },
+          "judgedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "채점 완료 시각"
+          }
+        }
+      },
+      "CreateSessionRequest": {
+        "type": "object",
+        "required": ["name", "startTime", "endTime", "sessionType"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "세션 이름",
+            "example": "Python 중간 평가 - 1차"
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "시작 시각",
+            "example": "2025-11-26T14:00:00Z"
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "종료 시각 (시작 시각보다 이후)",
+            "example": "2025-11-26T16:00:00Z"
+          },
+          "sessionType": {
+            "type": "string",
+            "enum": ["regular", "exam", "practice"],
+            "description": "세션 타입",
+            "example": "exam"
+          },
+          "allowResubmit": {
+            "type": "boolean",
+            "default": true,
+            "description": "재제출 허용 여부",
+            "example": true
+          }
+        }
+      },
+      "SessionSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "Python 중간 평가 - 1차"
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["scheduled", "active", "ended", "cancelled"],
+            "description": "세션 상태",
+            "example": "active"
+          },
+          "sessionType": {
+            "type": "string",
+            "enum": ["regular", "exam", "practice"],
+            "example": "exam"
+          },
+          "participantCount": {
+            "type": "integer",
+            "description": "참여 학생 수",
+            "example": 24
+          },
+          "problemCount": {
+            "type": "integer",
+            "description": "할당된 문제 수",
+            "example": 5
+          }
+        }
+      },
+      "SessionDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SessionSummary"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "allowResubmit": {
+                "type": "boolean",
+                "description": "재제출 허용 여부"
+              },
+              "creatorName": {
+                "type": "string",
+                "description": "생성자 이름",
+                "example": "김대위"
+              },
+              "students": {
+                "type": "array",
+                "description": "참여 학생 목록",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "joinedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              },
+              "problems": {
+                "type": "array",
+                "description": "할당된 문제 목록",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "difficulty": {
+                      "type": "integer"
+                    },
+                    "order": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        ]
+      },
+      "ScoreboardEntry": {
+        "type": "object",
+        "properties": {
+          "rank": {
+            "type": "integer",
+            "description": "순위",
+            "example": 1
+          },
+          "studentId": {
+            "type": "integer",
+            "example": 1
+          },
+          "studentName": {
+            "type": "string",
+            "example": "김병장"
+          },
+          "score": {
+            "type": "integer",
+            "description": "총 점수 (AC당 100점)",
+            "example": 500
+          },
+          "solvedCount": {
+            "type": "integer",
+            "description": "해결한 문제 수",
+            "example": 5
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "마지막 업데이트 시각"
+          }
+        }
+      },
+      "AuditLog": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "userId": {
+            "type": "integer"
+          },
+          "userName": {
+            "type": "string",
+            "example": "김병장"
+          },
+          "userRole": {
+            "type": "string",
+            "enum": ["student", "admin", "super_admin"],
+            "example": "admin"
+          },
+          "actionType": {
+            "type": "string",
+            "enum": ["login", "create", "update", "delete", "submit", "access_denied"],
+            "description": "행위 타입",
+            "example": "delete"
+          },
+          "targetResource": {
+            "type": "string",
+            "description": "대상 리소스",
+            "example": "session/1"
+          },
+          "ipAddress": {
+            "type": "string",
+            "example": "192.168.1.100"
+          },
+          "userAgent": {
+            "type": "string",
+            "example": "Mozilla/5.0..."
+          },
+          "performedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "result": {
+            "type": "string",
+            "enum": ["success", "failure"],
+            "example": "success"
+          },
+          "errorMessage": {
+            "type": "string",
+            "description": "에러 메시지 (실패 시)"
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "description": "현재 페이지",
+            "example": 1
+          },
+          "limit": {
+            "type": "integer",
+            "description": "페이지당 항목 수",
+            "example": 20
+          },
+          "totalItems": {
+            "type": "integer",
+            "description": "전체 항목 수",
+            "example": 150
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "전체 페이지 수",
+            "example": 8
+          }
+        }
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "작업이 성공적으로 완료되었습니다."
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "description": "에러 메시지",
+            "example": "요청을 처리할 수 없습니다."
+          },
+          "errorCode": {
+            "type": "string",
+            "description": "에러 코드",
+            "example": "INVALID_REQUEST"
+          },
+          "details": {
+            "type": "object",
+            "description": "추가 에러 상세 정보 (선택)"
+          }
+        }
+      }
+    },
+    "responses": {
+      "ValidationError": {
+        "description": "입력값 검증 실패",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": {
+                  "type": "boolean",
+                  "example": false
+                },
+                "message": {
+                  "type": "string",
+                  "example": "입력값 검증에 실패했습니다."
+                },
+                "errorCode": {
+                  "type": "string",
+                  "example": "VALIDATION_ERROR"
+                },
+                "details": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "field": {
+                        "type": "string",
+                        "example": "militaryId"
+                      },
+                      "message": {
+                        "type": "string",
+                        "example": "군번은 5-20자의 영문/숫자/하이픈만 허용됩니다."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "인증 실패 또는 토큰 만료",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "message": "인증에 실패했습니다. 로그인 정보를 확인해주세요.",
+              "errorCode": "UNAUTHORIZED"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "권한 없음",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "message": "이 작업을 수행할 권한이 없습니다.",
+              "errorCode": "FORBIDDEN"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "리소스를 찾을 수 없음",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "message": "요청한 리소스를 찾을 수 없습니다.",
+              "errorCode": "NOT_FOUND"
+            }
+          }
+        }
+      },
+      "TooManyRequests": {
+        "description": "요청 제한 초과",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "message": "채점 큐가 가득 찼습니다. 잠시 후 다시 시도해주세요.",
+              "errorCode": "TOO_MANY_REQUESTS",
+              "details": {
+                "queueSize": 500,
+                "retryAfter": 60
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
