@@ -11,8 +11,8 @@
   },
   "servers": [
     {
-      "url": "https://python-judge.vercel.app/api",
-      "description": "Production 서버 (Vercel)"
+      "url": "https://python-judge.render.com/api",
+      "description": "Production 서버 (Render Web Service)"
     },
     {
       "url": "http://localhost:3000/api",
