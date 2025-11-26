@@ -1,7 +1,7 @@
 import { jest } from '@jest/globals';
 import { createSubmissionService } from '../src/modules/submissions/services/submissionService.js';
 import { extractSubmissionCode } from '../src/modules/submissions/controllers/submissionController.js';
-import AppError, { ValidationError } from '../src/shared/errors/AppError.js';
+import AppError, { ValidationError, ForbiddenError } from '../src/shared/errors/AppError.js';
 
 const baseProblemRow = {
   id: 1,
@@ -161,5 +161,136 @@ describe('submissionService.submitCode', () => {
       expect.stringContaining('UPDATE submissions'),
       expect.arrayContaining(['AC'])
     );
+  });
+});
+
+describe('submissionService.getSubmissions', () => {
+  test('학생은 본인 제출만 조회하도록 studentId 필터를 덮어쓴다', async () => {
+    const runQuery = jest
+      .fn()
+      .mockResolvedValueOnce({ rows: [{ total: 1 }] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 10,
+            student_id: 1,
+            student_name: '학생A',
+            problem_id: 2,
+            problem_title: '문제',
+            status: 'AC',
+            execution_time: 12,
+            memory_usage: 1024,
+            submitted_at: '2025-01-01T00:00:00Z',
+          },
+        ],
+      });
+
+    const service = createSubmissionService({ runQuery });
+
+    const result = await service.getSubmissions(
+      { studentId: 999, limit: 5, offset: 0 },
+      { role: 'student', id: 1 }
+    );
+
+    // 첫 쿼리 파라미터로 본인 ID가 사용됨
+    expect(runQuery.mock.calls[0][1][0]).toBe(1);
+    expect(result.submissions[0].studentId).toBe(1);
+    expect(result.pagination.limit).toBe(5);
+  });
+
+  test('관리자는 studentId 필터를 사용할 수 있다', async () => {
+    const runQuery = jest
+      .fn()
+      .mockResolvedValueOnce({ rows: [{ total: 2 }] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 11,
+            student_id: 5,
+            student_name: '학생B',
+            problem_id: 3,
+            problem_title: '문제2',
+            status: 'WA',
+            execution_time: 30,
+            memory_usage: 2048,
+            submitted_at: '2025-01-02T00:00:00Z',
+          },
+        ],
+      });
+
+    const service = createSubmissionService({ runQuery });
+
+    await service.getSubmissions({ studentId: 5, limit: 10, offset: 0 }, { role: 'admin', id: 99 });
+
+    // COUNT 쿼리 파라미터로 필터 값이 전달됨
+    expect(runQuery.mock.calls[0][1]).toEqual([5]);
+  });
+
+  test('지원하지 않는 상태값이면 ValidationError', async () => {
+    const service = createSubmissionService({ runQuery: jest.fn() });
+    await expect(
+      service.getSubmissions({ status: 'UNKNOWN' }, { role: 'admin', id: 1 })
+    ).rejects.toBeInstanceOf(ValidationError);
+  });
+});
+
+describe('submissionService.getSubmissionResult', () => {
+  test('본인 제출이 아니면 ForbiddenError', async () => {
+    const runQuery = jest.fn().mockResolvedValueOnce({
+      rows: [
+        {
+          id: 20,
+          student_id: 2,
+          student_name: '학생B',
+          problem_id: 3,
+          problem_title: '문제3',
+          status: 'AC',
+          passed_cases: 3,
+          total_cases: 3,
+          execution_time: 10,
+          memory_usage: 512,
+          error_message: null,
+          submitted_at: '2025-01-03T00:00:00Z',
+          judged_at: '2025-01-03T00:01:00Z',
+        },
+      ],
+    });
+
+    const service = createSubmissionService({ runQuery });
+
+    await expect(service.getSubmissionResult(20, { role: 'student', id: 1 })).rejects.toBeInstanceOf(
+      ForbiddenError
+    );
+  });
+
+  test('채점 결과를 상세히 반환한다', async () => {
+    const runQuery = jest.fn().mockResolvedValueOnce({
+      rows: [
+        {
+          id: 21,
+          student_id: 1,
+          student_name: '학생A',
+          problem_id: 4,
+          problem_title: '문제4',
+          status: 'WA',
+          passed_cases: 1,
+          total_cases: 3,
+          execution_time: 55,
+          memory_usage: 4096,
+          error_message: '틀렸습니다',
+          submitted_at: '2025-01-04T00:00:00Z',
+          judged_at: '2025-01-04T00:01:00Z',
+        },
+      ],
+    });
+
+    const service = createSubmissionService({ runQuery });
+
+    const detail = await service.getSubmissionResult(21, { role: 'student', id: 1 });
+
+    expect(detail.status).toBe('WA');
+    expect(detail.passedCases).toBe(1);
+    expect(detail.totalCases).toBe(3);
+    expect(detail.problemTitle).toBe('문제4');
   });
 });

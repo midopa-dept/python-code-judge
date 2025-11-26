@@ -2,15 +2,12 @@ import { getClient, query as defaultQuery } from '../../../config/database.js';
 import { analyzePythonCode as defaultAnalyze } from '../../../shared/utils/pythonAstValidator.js';
 import { judgeSubmission as defaultJudge } from '../../../shared/utils/judgeRunner.js';
 import logger from '../../../shared/utils/logger.js';
-import AppError, {
-  ValidationError,
-  NotFoundError,
-  ForbiddenError,
-} from '../../../shared/errors/AppError.js';
+import AppError, { ValidationError, NotFoundError, ForbiddenError } from '../../../shared/errors/AppError.js';
 
 export const MAX_CODE_BYTES = 64 * 1024;
 export const SUPPORTED_PYTHON_VERSIONS = ['3.8', '3.9', '3.10', '3.11', '3.12'];
 const DUP_WINDOW_SECONDS = 5;
+const ALLOWED_STATUSES = ['AC', 'WA', 'TLE', 'RE', 'SE', 'MLE', 'pending', 'judging'];
 
 const buildAstErrorMessage = (astResult) => {
   if (astResult?.message) return astResult.message;
@@ -187,6 +184,169 @@ export const createSubmissionService = (deps = {}) => {
     }
   };
 
+  const parsePagination = ({ limit, offset, page }) => {
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+    let offsetNum = parseInt(offset, 10);
+    if (Number.isNaN(offsetNum)) {
+      const pageNum = Math.max(1, parseInt(page, 10) || 1);
+      offsetNum = (pageNum - 1) * limitNum;
+    }
+    return { limit: limitNum, offset: Math.max(0, offsetNum) };
+  };
+
+  const getSubmissions = async (filters, requester) => {
+    const { limit, offset } = parsePagination(filters);
+    const conditions = [];
+    const params = [];
+    let paramCount = 0;
+
+    // 권한: 학생은 본인 제출만, 관리자는 선택적으로 studentId 필터 적용
+    if (requester.role === 'student') {
+      paramCount++;
+      conditions.push(`s.student_id = $${paramCount}`);
+      params.push(requester.id);
+    } else if (filters.studentId) {
+      const studentId = parseInt(filters.studentId, 10);
+      if (!Number.isNaN(studentId)) {
+        paramCount++;
+        conditions.push(`s.student_id = $${paramCount}`);
+        params.push(studentId);
+      }
+    }
+
+    if (filters.problemId) {
+      const problemId = parseInt(filters.problemId, 10);
+      if (!Number.isNaN(problemId)) {
+        paramCount++;
+        conditions.push(`s.problem_id = $${paramCount}`);
+        params.push(problemId);
+      }
+    }
+
+    if (filters.status) {
+      if (!ALLOWED_STATUSES.includes(filters.status)) {
+        throw new ValidationError('지원하지 않는 채점 상태입니다.');
+      }
+      paramCount++;
+      conditions.push(`s.status = $${paramCount}`);
+      params.push(filters.status);
+    }
+
+    if (filters.sessionId) {
+      const sessionId = parseInt(filters.sessionId, 10);
+      if (!Number.isNaN(sessionId)) {
+        paramCount++;
+        conditions.push(`s.session_id = $${paramCount}`);
+        params.push(sessionId);
+      }
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM submissions s
+      ${whereClause}
+    `;
+    const countResult = await runQuery(countQuery, params);
+    const totalItems = parseInt(countResult.rows[0]?.total || 0, 10);
+
+    paramCount++;
+    const limitParam = paramCount;
+    paramCount++;
+    const offsetParam = paramCount;
+
+    const listQuery = `
+      SELECT
+        s.id,
+        s.student_id,
+        u.name as student_name,
+        s.problem_id,
+        p.title as problem_title,
+        s.status,
+        s.execution_time,
+        s.memory_usage,
+        s.submitted_at
+      FROM submissions s
+      JOIN users u ON u.id = s.student_id
+      JOIN problems p ON p.id = s.problem_id
+      ${whereClause}
+      ORDER BY s.submitted_at DESC
+      LIMIT $${limitParam} OFFSET $${offsetParam}
+    `;
+    const listResult = await runQuery(listQuery, [...params, limit, offset]);
+
+    return {
+      submissions: listResult.rows.map((row) => ({
+        id: row.id,
+        studentId: row.student_id,
+        studentName: row.student_name,
+        problemId: row.problem_id,
+        problemTitle: row.problem_title,
+        status: row.status,
+        executionTime: row.execution_time,
+        memoryUsage: row.memory_usage,
+        submittedAt: row.submitted_at,
+      })),
+      pagination: {
+        limit,
+        offset,
+        totalItems,
+      },
+    };
+  };
+
+  const getSubmissionResult = async (submissionId, requester) => {
+    const resultQuery = `
+      SELECT
+        s.id,
+        s.student_id,
+        u.name as student_name,
+        s.problem_id,
+        p.title as problem_title,
+        s.status,
+        s.passed_cases,
+        s.total_cases,
+        s.execution_time,
+        s.memory_usage,
+        s.error_message,
+        s.submitted_at,
+        s.judged_at
+      FROM submissions s
+      JOIN users u ON u.id = s.student_id
+      JOIN problems p ON p.id = s.problem_id
+      WHERE s.id = $1
+    `;
+
+    const submissionResult = await runQuery(resultQuery, [submissionId]);
+
+    if (submissionResult.rows.length === 0) {
+      throw new NotFoundError('제출을 찾을 수 없습니다.');
+    }
+
+    const submission = submissionResult.rows[0];
+
+    if (requester.role === 'student' && requester.id !== submission.student_id) {
+      throw new ForbiddenError('본인 제출만 조회할 수 있습니다.');
+    }
+
+    return {
+      id: submission.id,
+      studentId: submission.student_id,
+      studentName: submission.student_name,
+      problemId: submission.problem_id,
+      problemTitle: submission.problem_title,
+      status: submission.status,
+      passedCases: submission.passed_cases ?? 0,
+      totalCases: submission.total_cases ?? 0,
+      executionTime: submission.execution_time,
+      memoryUsage: submission.memory_usage,
+      errorMessage: submission.error_message,
+      submittedAt: submission.submitted_at,
+      judgedAt: submission.judged_at,
+    };
+  };
+
   const submitCode = async ({ studentId, userRole, problemId, sessionId, code, pythonVersion }) => {
     if (!studentId) {
       throw new ValidationError('사용자 정보가 필요합니다.');
@@ -274,6 +434,8 @@ export const createSubmissionService = (deps = {}) => {
   };
 
   return {
+    getSubmissions,
+    getSubmissionResult,
     submitCode,
   };
 };
