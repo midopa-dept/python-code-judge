@@ -165,7 +165,7 @@ erDiagram
 | 필드명 | 타입 | 제약조건 | 설명 |
 |--------|------|----------|------|
 | id | bigserial | PK | 학생 고유 ID |
-| military_id | varchar(20) | NOT NULL, UNIQUE | 군번 (5-20자) |
+| military_id | varchar(20) | NOT NULL, UNIQUE | 군번 (영문/숫자/하이픈 5-20자) |
 | login_id | varchar(20) | NOT NULL, UNIQUE | 로그인 ID (4-20자) |
 | name | varchar(50) | NOT NULL | 이름 (2-50자) |
 | password_hash | varchar(100) | NOT NULL | bcrypt 암호화 비밀번호 |
