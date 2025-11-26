@@ -227,6 +227,12 @@ uploads/
 # 테스트 제출 파일
 test-submissions/
 
+# Claude Code 로컬 설정
+.claude/settings.local.json
+
+# Windows 임시 파일
+nul
+
 # ==================== Keep These ====================
 # 아래 파일/디렉토리는 반드시 커밋됨
 # !docs/
