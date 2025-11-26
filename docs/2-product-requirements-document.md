@@ -178,7 +178,7 @@ Python Judge는 Python 알고리즘 코딩 테스트를 온라인으로 수행�
   - **RE (Runtime Error)**: 실행 중 예외 발생
   - **SE (Syntax Error)**: 문법 오류 또는 금지 모듈 사용
   - **MLE (Memory Limit Exceeded)**: 메모리 제한 초과 (256MB)
-- **성능 목표**: 평균 5초, 최대 10초 (Vercel 서버리스 함수 한도 기준, Pro 전환 시 60초까지 확장 가능)
+- **성능 목표**: 평균 5초, 최대 10초 (단일 컨테이너 기준, 필요 시 스케일업/아웃)
 
 #### FR-203: 제출 이력 조회
 
@@ -214,7 +214,7 @@ Python Judge는 Python 알고리즘 코딩 테스트를 온라인으로 수행�
   - 정답 제출 시 즉시 점수 반영
   - 동점 시 먼저 제출한 학생 우선
   - **폴링 방식**으로 실시간 업데이트 (3-5초 간격)
-    - Vercel 서버리스 환경에서 WebSocket 지원 불가
+    - 초기 구현에서는 WebSocket 미사용 → 폴링 채택
     - 클라이언트가 주기적으로 `/api/sessions/:id/scoreboard` 요청
   - 순위 변동 시 애니메이션 효과
 
@@ -292,14 +292,14 @@ Python Judge는 Python 알고리즘 코딩 테스트를 온라인으로 수행�
 | 허용 모듈 | math, random, itertools, collections, string, re, datetime, json 등 |
 | 파일 I/O  | 임시 디렉토리만 허용                                                |
 | 네트워크  | 전면 차단                                                           |
-| HTTPS     | 필수 (Vercel 자동 제공)                                             |
+| HTTPS     | 필수 (배포 환경에서 TLS 구성)                                       |
 
 ### 4.3 가용성 요구사항
 
 | 항목                 | 요구사항               |
 | -------------------- | ---------------------- |
 | 시스템 가동률        | 99% 이상               |
-| 백업 주기            | 일 1회 자동 (Supabase) |
+| 백업 주기            | 일 1회 자동 (Supabase 백업 예정, 현재 수동/스크립트) |
 | 복구 목표 시간 (RTO) | 4시간                  |
 | 복구 목표 시점 (RPO) | 24시간                 |
 
@@ -311,7 +311,7 @@ Python Judge는 Python 알고리즘 코딩 테스트를 온라인으로 수행�
 | 3년 목표    | 50명                          |
 | 문제 수     | 최대 1,000개                  |
 | 제출 이력   | 영구 보관                     |
-| 수평 확장   | Vercel 서버리스 자동 스케일링 |
+| 수평 확장   | 필요 시 인스턴스/리전 수 확장 (컨테이너) |
 
 ### 4.5 호환성 요구사항
 
@@ -365,7 +365,7 @@ Python Judge는 Python 알고리즘 코딩 테스트를 온라인으로 수행�
 
 - 순위, 학생 이름, 해결 문제 수, 점수 테이블
 - **폴링 방식**으로 실시간 업데이트 (3-5초 간격)
-  - Vercel WebSocket 미지원으로 폴링 사용
+  - 초기 버전 WebSocket 미사용 → 폴링 우선
 - 순위 변동 시 행 애니메이션 (색상 변경, 이동)
 - 내 순위 하이라이트
 - 수동 새로고침 버튼 제공
@@ -488,37 +488,35 @@ education_sessions 1 --- N scoreboards
 | ------------- | ------------------------- | ----------------------------------- |
 | **Backend**   | Node.js + Express         | REST API 개발에 익숙                |
 | **Frontend**  | React + Tailwind CSS      | 컴포넌트 재사용성, 빠른 스타일링    |
-| **Database**  | PostgreSQL (Supabase)     | 안정성, JSON 지원, 관리형 서비스    |
-| **배포**      | Vercel (Frontend/Backend) | 서버리스, 자동 스케일링, CI/CD 통합 |
+| **Database**  | PostgreSQL (Supabase 예정, 현재 로컬) | 안정성, JSON 지원, 관리형 서비스 예정 |
+| **배포**      | Render Web Service (컨테이너) | Docker 이미지로 단일 서비스 운영      |
 | **버전 관리** | GitHub                    | 협업 및 코드 관리                   |
 | **CI/CD**     | GitHub Actions            | 자동 테스트 및 배포                 |
 
 ### 7.2 시스템 아키텍처
 
 ```
-[Client - React]
+[Client - React (Vite)]
       ↓ HTTPS
-[Vercel - API (Express)]
+[Render - App Server (Express + 채점 엔진)]
       ↓
-[Supabase - PostgreSQL]
-
-[Judging Engine - subprocess]
+[PostgreSQL - Supabase (예정, 현재 로컬 Postgres)]
 ```
 
 - **3-tier 아키텍처**: Presentation (React) - Application (Express API) - Data (PostgreSQL)
 - **RESTful API**: 표준 HTTP 메서드 및 상태 코드 사용
-- **서버리스 배포**: Vercel Functions로 자동 스케일링
+- **컨테이너 배포**: Express API + 채점 엔진을 단일 컨테이너로 Render Web Service에 배포
 - **Stateless**: JWT 기반 무상태 인증
 
 ### 7.3 보안 아키텍처
 
 | 레이어        | 보안 메커니즘                                      |
 | ------------- | -------------------------------------------------- |
-| **네트워크**  | HTTPS 필수 (Vercel 자동 제공)                      |
+| **네트워크**  | HTTPS 필수 (Render 기본 제공)                    |
 | **인증**      | JWT (2시간 유효), httpOnly 쿠키                    |
 | **권한**      | RBAC (학생/관리자/최고관리자)                      |
 | **코드 실행** | AST 정적 분석 → subprocess 격리 → 타임아웃         |
-| **데이터**    | Supabase RLS (Row Level Security), 비밀번호 bcrypt |
+| **데이터**    | Supabase RLS 예정, DB 최소 권한 롤, 비밀번호 bcrypt |
 | **로깅**      | 감사 로그 90일 보관                                |
 
 ---
@@ -642,18 +640,17 @@ education_sessions 1 --- N scoreboards
 
 | 제약사항                    | 영향                          | 대응 방안                                                |
 | --------------------------- | ----------------------------- | -------------------------------------------------------- |
-| **Docker 사용 불가**        | 컨테이너 격리 불가능          | subprocess 프로세스 격리 + AST 정적 분석                 |
-| **Vercel WebSocket 미지원** | 실시간 양방향 통신 불가       | 폴링 방식 사용 (3-5초 간격), 스코어보드 자동 새로고침    |
-| **Vercel 함수 타임아웃**    | 최대 10초 (Hobby), 60초 (Pro) | 채점 시간 10초 이내로 제한, 필요 시 Pro 플랜 전환        |
-| **Vercel 함수 메모리**      | 최대 1024MB                   | 채점 엔진 메모리 최적화                                  |
+| **Docker 사용 필수**        | 컨테이너 빌드/배포 필요       | Dockerfile에 Node+Python 포함, Render Web Service 활용    |
+| **웹소켓 미사용(초기)**     | 실시간 양방향 통신 없음       | 폴링 방식 사용 (3-5초 간격), 추후 WebSocket/SSE 검토     |
+| **컨테이너 자원 제한**      | CPU/RAM 초과 시 지연          | 타임아웃 5초, 메모리 256MB 기본 제한, 필요 시 스케일업   |
 | **동기 처리**               | 캐시/메시지 큐 없음           | 초기 규모 작아 동기 처리 가능, 향후 Redis 도입 검토      |
-| **Windows Server**          | 개발/테스트 환경              | Vercel 서버리스는 Linux, 로컬 Windows 호환성 테스트 필요 |
+| **Windows 개발 환경**       | 로컬/배포 환경 차이           | 컨테이너로 런타임 표준화, CI에서 Linux 빌드 검증         |
 
 ### 10.2 인프라 제약사항
 
 | 항목                 | 제약                            | 비고                            |
 | -------------------- | ------------------------------- | ------------------------------- |
-| Vercel (Hobby 플랜)  | 함수 실행 10초, 월 100GB 대역폭 | MVP 단계 충분, 성장 시 Pro 전환 |
+| Render Free 플랜     | 슬립/쿨다운 가능, 제한된 리소스 | 채점 중단 방지 위해 유료 검토 가능 |
 | Supabase (Free 플랜) | 500MB DB, 2GB 전송량            | 초기 충분, 향후 Pro 전환        |
 | 네트워크             | 공개 인터넷                     | 방화벽/VPN 불필요               |
 
@@ -698,7 +695,7 @@ education_sessions 1 --- N scoreboards
 
 ### 11.3 의존성 및 선행 조건
 
-- **M2 선행 조건**: Vercel, Supabase 계정 생성, GitHub Repository 생성
+- **M2 선행 조건**: Render 프로젝트, Supabase 계정 생성, GitHub Repository 생성
 - **M3 선행 조건**: 데이터베이스 스키마 설계 완료
 - **M4 선행 조건**: Backend API 문서화 완료 (Swagger)
 - **M5 선행 조건**: 테스트 문제 및 테스트 케이스 10개 이상 준비
@@ -713,7 +710,7 @@ education_sessions 1 --- N scoreboards
 | 리스크                               | 발생 가능성 | 영향도 | 완화 전략                                                                                                         |
 | ------------------------------------ | ----------- | ------ | ----------------------------------------------------------------------------------------------------------------- |
 | **Python 코드 샌드박스 보안 취약점** | 중          | 높음   | - AST 정적 분석 강화<br>- subprocess 타임아웃 엄격 설정<br>- 정기적인 보안 감사<br>- 금지 모듈 목록 지속 업데이트 |
-| **Vercel 함수 타임아웃 (10초)**      | 중          | 중     | - 채점 시간 최적화<br>- 복잡한 문제는 시간 제한 10초로 설정<br>- 필요 시 Pro 플랫 전환 (60초)                     |
+| **컨테이너 자원 한도**              | 중          | 중     | - 채점 시간 최적화<br>- 시간 제한 10초 기본<br>- 필요 시 상위 플랜/스케일업                                |
 | **동시 채점 과부하**                 | 낮음        | 중     | - 채점 큐 최대 500개 제한<br>- 429 에러 반환으로 과부하 방지<br>- Phase 2에서 Redis 큐 도입                       |
 | **데이터베이스 성능 저하**           | 낮음        | 중     | - 인덱스 최적화<br>- Supabase 쿼리 모니터링<br>- 필요 시 Pro 플랜 전환                                            |
 
@@ -739,7 +736,7 @@ education_sessions 1 --- N scoreboards
 
 | 리스크                   | 발생 가능성 | 영향도 | 완화 전략                                                                    |
 | ------------------------ | ----------- | ------ | ---------------------------------------------------------------------------- |
-| **Vercel/Supabase 장애** | 낮음        | 높음   | - 일 1회 자동 백업<br>- 다운타임 모니터링<br>- 사용자 공지 프로세스          |
+| **Render/Supabase 장애** | 낮음        | 높음   | - 일 1회 자동 백업<br>- 다운타임 모니터링<br>- 사용자 공지 프로세스          |
 | **비용 초과**            | 낮음        | 중     | - Free/Hobby 플랜으로 시작<br>- 월별 사용량 모니터링<br>- Pro 전환 예산 확보 |
 
 ---
@@ -748,7 +745,7 @@ education_sessions 1 --- N scoreboards
 
 - **도메인 정의서**: `docs/1-domain-definition.md` (v1.2)
 - **입력 템플릿**: `docs/prd-input-template.md`
-- **기술 스택 문서**: Vercel Docs, Supabase Docs, Express.js Docs
+- **기술 스택 문서**: Render Docs, Supabase Docs, Express.js Docs
 
 ## 부록 B: 용어 사전
 

@@ -14,14 +14,14 @@ graph TB
         Client[웹 브라우저<br/>Chrome/Firefox/Edge]
     end
 
-    subgraph "Vercel 서버리스"
-        Frontend[React Frontend<br/>Tailwind CSS]
+    subgraph "애플리케이션 서버 (Render Web Service)"
+        Frontend[React Frontend<br/>Vite + Tailwind]
         Backend[Express API<br/>Node.js]
-        Judge[채점 엔진<br/>(subprocess, Python 3.8-3.12)]
+        Judge[채점 엔진<br/>(subprocess, Python 3.8~3.12)]
     end
 
-    subgraph "Supabase"
-        DB[(PostgreSQL<br/>Database)]
+    subgraph "Database (Supabase 예정)"
+        DB[(PostgreSQL<br/>Managed)]
     end
 
     Client -->|HTTPS| Frontend
@@ -38,19 +38,23 @@ graph TB
 ```mermaid
 graph LR
     subgraph "Presentation Layer"
-        UI[React UI<br/>- 문제 목록<br/>- 코드 제출<br/>- 스코어보드]
+        UI[React UI (Vite)<br/>- 문제 목록<br/>- 코드 제출<br/>- 스코어보드]
     end
 
-    subgraph "Application Layer"
-        API[Express API<br/>- 인증/인가<br/>- 비즈니스 로직<br/>- 채점 관리]
+    subgraph "Application Layer (컨테이너)"
+        API[Express API<br/>모듈러 모놀리스]
+        Modules[모듈: auth/users/problems/sessions/submissions/audit]
+        Judge[채점 엔진<br/>(AST + subprocess)]
     end
 
     subgraph "Data Layer"
-        Data[(PostgreSQL<br/>- 학생 정보<br/>- 문제/테스트<br/>- 제출 이력)]
+        Data[(PostgreSQL<br/>Supabase 예정, 현재 로컬)]
     end
 
     UI <-->|JSON/JWT| API
+    API --> Modules
     API <-->|SQL| Data
+    Modules --> Judge
 ```
 
 ---
@@ -114,46 +118,120 @@ sequenceDiagram
 
 ```mermaid
 erDiagram
-    students ||--o{ submissions : "제출"
-    administrators ||--o{ problems : "출제"
+    users ||--o{ submissions : "제출"
+    users ||--o{ scoreboards : "순위"
+    users ||--o{ audit_logs : "로그"
+
     problems ||--o{ test_cases : "포함"
     problems ||--o{ submissions : "대상"
-    submissions ||--|| judging_results : "결과"
+    problems ||--o{ session_problems : "할당"
 
-    education_sessions ||--o{ session_students : "참여"
-    education_sessions ||--o{ session_problems : "할당"
-    education_sessions ||--o{ scoreboards : "순위"
+    submissions }o--|| education_sessions : "세션"
+    education_sessions ||--o{ session_students : "학생"
+    education_sessions ||--o{ session_problems : "문제"
+    education_sessions ||--o{ scoreboards : "스코어보드"
 
-    students {
-        int id PK
-        string military_id UK
-        string login_id UK
-        string name
-        string password_hash
+    users {
+        bigserial id PK
+        varchar military_id UK
+        varchar login_id UK
+        varchar name
+        varchar password_hash
+        varchar role
+        varchar account_status
+        timestamp created_at
+        timestamp last_login
+        timestamp updated_at
     }
 
     problems {
-        int id PK
-        string title
-        string category
-        int difficulty
-        int time_limit
+        bigserial id PK
+        varchar title
+        text description
+        varchar category
+        integer difficulty
+        integer time_limit
+        integer memory_limit
+        varchar visibility
+        bigint created_by FK
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    test_cases {
+        bigserial id PK
+        bigint problem_id FK
+        text input_data
+        text expected_output
+        boolean is_public
+        integer test_order
+        timestamp created_at
+        timestamp updated_at
     }
 
     submissions {
-        int id PK
-        int student_id FK
-        int problem_id FK
+        bigserial id PK
+        bigint student_id FK
+        bigint problem_id FK
+        bigint session_id FK
         text code
+        integer code_size
+        varchar status
+        varchar python_version
+        integer execution_time
+        integer memory_usage
+        integer passed_cases
+        integer total_cases
+        text error_message
         timestamp submitted_at
+        timestamp judged_at
     }
 
-    judging_results {
-        int id PK
-        int submission_id FK
-        string status
-        int passed_cases
-        float execution_time
+    education_sessions {
+        bigserial id PK
+        varchar name
+        timestamp start_time
+        timestamp end_time
+        varchar status
+        varchar session_type
+        boolean allow_resubmit
+        bigint creator_id FK
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    session_students {
+        bigint session_id PK_FK
+        bigint student_id PK_FK
+        timestamp joined_at
+    }
+
+    session_problems {
+        bigint session_id PK_FK
+        bigint problem_id PK_FK
+        integer problem_order
+    }
+
+    scoreboards {
+        bigint session_id PK_FK
+        bigint student_id PK_FK
+        integer score
+        integer solved_count
+        integer rank
+        timestamp updated_at
+    }
+
+    audit_logs {
+        bigserial id PK
+        bigint user_id FK
+        varchar user_role
+        varchar action_type
+        varchar target_resource
+        varchar ip_address
+        varchar user_agent
+        timestamp performed_at
+        varchar result
+        text error_message
     }
 ```
 
@@ -169,7 +247,7 @@ graph TD
         L3[권한: RBAC<br/>학생/관리자/최고관리자]
         L4[코드 검증: AST 정적 분석<br/>금지: os, subprocess, socket, eval<br/>허용: math, random, itertools 등]
         L5[실행 격리: subprocess<br/>타임아웃 + 메모리 제한]
-        L6[데이터: bcrypt 암호화<br/>Supabase RLS]
+        L6[데이터: bcrypt 암호화<br/>Supabase RLS 예정]
         L7[감사: 로그 90일 보관]
     end
 
@@ -195,13 +273,13 @@ graph TB
         CI[CI/CD<br/>자동 테스트/빌드]
     end
 
-    subgraph "Vercel"
-        Deploy[자동 배포<br/>서버리스]
+    subgraph "Render"
+        Deploy[자동 배포<br/>컨테이너 Web Service]
         Prod[Production<br/>환경]
     end
 
-    subgraph "Supabase"
-        ProdDB[(Production DB<br/>자동 백업)]
+    subgraph "Database (Supabase 예정)"
+        ProdDB[(PostgreSQL<br/>Managed)]
     end
 
     Code -->|Push| CI
@@ -218,11 +296,11 @@ graph TB
 |------|------|------|
 | **Frontend** | React + Tailwind CSS | UI 렌더링, 사용자 인터랙션 |
 | **Backend** | Node.js + Express | REST API, 비즈니스 로직 |
-| **Database** | PostgreSQL (Supabase) | 데이터 저장 및 관리 |
-| **채점** | subprocess (Python 3.8-3.12) | 코드 실행 및 채점 |
-| **인증** | JWT | 무상태 인증 (2시간 유효) |
+| **Database** | PostgreSQL (Supabase 예정) | 데이터 저장 및 관리 |
+| **채점** | subprocess (Python 3.8-3.12) | AST 검사 + 코드 실행 및 채점 |
+| **인증** | JWT | 무상태 인증 |
 | **보안** | AST + subprocess | 코드 정적 분석 + 프로세스 격리 |
-| **배포** | Vercel | 서버리스 자동 스케일링 |
+| **배포** | Render Web Service (컨테이너) | 컨테이너 배포, 자동 HTTPS |
 | **CI/CD** | GitHub Actions | 자동 테스트 및 배포 |
 | **버전 관리** | GitHub | 소스 코드 관리 및 협업 |
 | **보안 모듈** | AST + 금지 모듈 차단 | os, subprocess, socket, eval 등 차단 |
@@ -231,10 +309,10 @@ graph TB
 
 ## 9. 주요 특징
 
-### 9.1 서버리스 아키텍처
-- Vercel Functions로 자동 스케일링
-- 사용량 기반 과금
-- 인프라 관리 불필요
+### 9.1 컨테이너 우선
+- Express 기반 모듈러 모놀리스 (Render Web Service)
+- 채점 엔진과 API가 동일 컨테이너 내 subprocess로 동작
+- PostgreSQL은 Supabase로 이전 예정 (현 개발 단계는 로컬)
 
 ### 9.2 Stateless 설계
 - JWT 기반 무상태 인증
@@ -266,10 +344,9 @@ graph TB
 
 | 제약사항 | 영향 | 대응 방안 |
 |---------|------|----------|
-| **Docker 사용 불가** | 컨테이너 격리 불가능 | subprocess 프로세스 격리 + AST 정적 분석 |
-| **Vercel WebSocket 미지원** | 실시간 양방향 통신 불가 | 폴링 방식 (3-5초 간격) 스코어보드 업데이트 |
-| **Vercel 함수 타임아웃** | Hobby 10초, Pro 60초 | 채점 시간 최적화, 필요 시 Pro 플랜 전환 |
-| **Vercel 함수 메모리** | 최대 1024MB | 채점 엔진 메모리 최적화 |
+| **Docker 사용 불가** | 컨테이너 격리 불가능 | subprocess 격리 + AST 정적 분석 |
+| **컨테이너 자원 한도** | CPU/메모리 제한 | 기본 5초 제한, 필요 시 스케일업 |
+| **Supabase 미연동 (현재)** | 관리형 기능(RLS/백업) 미사용 | 로컬 Postgres로 개발, 배포 시 Supabase 전환 |
 
 ### 10.2 보안 정책
 

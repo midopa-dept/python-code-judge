@@ -28,7 +28,7 @@
 **적용 방법**:
 
 - 3-tier 아키텍처 (Presentation - Application - Data)
-- 서버리스 배포로 인프라 관리 복잡도 제거
+- 컨테이너 기반 모듈러 모놀리스 (Render Web Service)
 - 필요한 경우에만 추상화 레이어 추가
 - YAGNI (You Aren't Gonna Need It) 원칙 준수
 
@@ -49,14 +49,14 @@
 - 프레젠테이션 로직은 컨트롤러/컴포넌트에만 위치
 - 횡단 관심사(인증, 로깅)는 미들웨어로 분리
 
-### 1.3 모놀리스-우선, 모듈러 설계 (Modular Monolith)
+### 1.3 모놀리스-우선, 모듈러 설계 (Modular Monolith, 컨테이너 배포)
 
 **원칙**: 단일 배포 단위를 유지하되, 내부적으로는 명확한 모듈 경계를 가집니다.
 
 **이유**:
 
-- Vercel 서버리스 환경에서 마이크로서비스는 과도한 복잡도
 - 초기 규모에서는 모놀리스가 효율적
+- 컨테이너(Web Service)로 운영/스케일 단순화
 - 향후 필요 시 모듈 단위로 분리 가능하도록 설계
 
 **모듈 구조**:
@@ -378,7 +378,7 @@
 
 - .env.development - 로컬 개발
 - .env.test - 테스트
-- .env.production - 프로덕션 (Vercel 환경 변수로 관리)
+- .env.production - 프로덕션 (배포 환경 변수로 관리)
 
 **필수 환경 변수**:
 
@@ -570,17 +570,12 @@
 
 ## 9. 배포 및 CI/CD
 
-### 9.1 Vercel 배포 설정
+### 9.1 Render 컨테이너 배포
 
-**Backend vercel.json**:
-
-- builds: @vercel/node
-- routes: API 라우팅 설정
-- env: 환경 변수
-
-**Frontend vercel.json**:
-
-- rewrites: SPA 라우팅 설정
+- Backend/채점: 단일 컨테이너 Web Service (Express + subprocess)
+- Frontend: 정적 호스팅(동일 컨테이너 또는 별도 정적 서비스)
+- 환경 변수: Render 대시보드로 관리 (Supabase는 추후 연결)
+- 로그: 애플리케이션 JSON 로그 + Render 로그 뷰어
 
 ### 9.2 GitHub Actions CI/CD
 
@@ -591,9 +586,8 @@
 
 **Deploy Pipeline**:
 
-- main 브랜치 푸시 시 자동 배포
-- Backend → Vercel
-- Frontend → Vercel
+- main 브랜치 푸시 시 자동 배포 (Render로 컨테이너 이미지 배포)
+- Backend/Frontend를 하나의 이미지로 배포하거나 별도 서비스로 분리
 
 ---
 
@@ -940,9 +934,9 @@ def get_normalized_expected_output(test_case_id: int) -> str:
 | ------------------- | --------------------- | ----------------------------- | ----------------------------------------- |
 | **아키텍처 스타일** | 모듈러 모놀리스       | 초기 규모에 적합, 배포 단순   | 향후 마이크로서비스 전환 시 리팩토링 필요 |
 | **코드 실행 격리**  | subprocess + AST      | Docker 불가 환경, 실용적 보안 | 컨테이너 격리보다 보안 수준 낮음          |
-| **실시간 통신**     | 폴링 (3-5초)          | Vercel WebSocket 미지원       | 네트워크 오버헤드, 지연 시간              |
-| **상태 관리**       | Stateless (JWT)       | 서버리스 환경, 스케일링 용이  | 세션 무효화 복잡함                        |
-| **데이터베이스**    | PostgreSQL (Supabase) | 관계형 데이터, 안정성         | NoSQL 유연성 부족                         |
+| **실시간 통신**     | 폴링 (3-5초)          | 단순 구현, WebSocket 불사용   | 네트워크 오버헤드, 지연 시간              |
+| **상태 관리**       | Stateless (JWT)       | 수평 확장 대비                | 세션 무효화 복잡함                        |
+| **데이터베이스**    | PostgreSQL (Supabase 예정) | 관계형 데이터, 안정성         | NoSQL 유연성 부족                         |
 | **채점 방식**       | 동기 처리             | 초기 규모 작음, 구현 단순     | 대규모 확장 시 비동기 큐 필요             |
 | **캐시 레이어**     | 없음 (Phase 1)        | 복잡도 최소화                 | 데이터베이스 부하 증가 가능               |
 
@@ -960,7 +954,7 @@ def get_normalized_expected_output(test_case_id: int) -> str:
 | 성능 목표               | 달성 전략                                     | 확장 계획                                    |
 | ----------------------- | --------------------------------------------- | -------------------------------------------- |
 | **채점 5초 이내**       | 최적화된 Python 실행, 테스트 케이스 병렬 처리 | 필요 시 워커 프로세스 추가                   |
-| **동시 30명 처리**      | Vercel 서버리스 자동 스케일링                 | 50명 이상 시 Pro 플랜 전환                   |
+| **동시 30명 처리**      | 컨테이너 스케일업/아웃                        | 트래픽 증가 시 인스턴스 증설                 |
 | **스코어보드 업데이트** | 5초 폴링, 클라이언트 캐싱                     | Phase 2에서 Redis Pub/Sub 검토               |
 | **데이터베이스 쿼리**   | 인덱스 최적화, 필요한 컬럼만 조회             | 쿼리 성능 모니터링, 필요 시 읽기 전용 복제본 |
 
@@ -1008,7 +1002,7 @@ def get_normalized_expected_output(test_case_id: int) -> str:
 
 - [ ] 도메인 정의서 검토 완료
 - [ ] PRD 요구사항 반영 확인
-- [ ] 기술 스택 확정 (Node.js, React, PostgreSQL, Vercel)
+- [ ] 기술 스택 확정 (Node.js, React, PostgreSQL/Supabase, Render)
 - [ ] 보안 요구사항 반영 (AST 분석, subprocess 격리)
 - [ ] 디렉토리 구조 합의
 
@@ -1026,9 +1020,8 @@ def get_normalized_expected_output(test_case_id: int) -> str:
 
 ### 배포 단계
 
-- [ ] Vercel 프로젝트 생성 (Frontend, Backend)
-- [ ] Supabase 프로젝트 생성
-- [ ] 환경 변수 Vercel에 설정
+- [ ] Render 프로젝트 생성/연동 (Web Service)
+- [ ] Supabase 프로젝트(추후) 및 환경 변수 준비
 - [ ] GitHub Actions CI/CD 설정
 - [ ] 헬스체크 엔드포인트 구현
 - [ ] 에러 모니터링 설정
@@ -1059,7 +1052,7 @@ def get_normalized_expected_output(test_case_id: int) -> str:
 - [Express.js Guide](https://expressjs.com/en/guide/routing.html)
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)
 - [Supabase Documentation](https://supabase.com/docs)
-- [Vercel Documentation](https://vercel.com/docs)
+- [Render Documentation](https://render.com/docs)
 
 **보안 참조**:
 

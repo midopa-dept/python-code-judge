@@ -1,6 +1,11 @@
 import dotenv from 'dotenv';
+import os from 'os';
+import path from 'path';
 
 dotenv.config();
+
+const defaultTempDir = process.env.TEMP_DIR || path.join(os.tmpdir(), 'judging-temp');
+const defaultLogDir = process.env.LOG_DIR || path.join(os.tmpdir(), 'logs');
 
 export const config = {
   port: process.env.PORT || 3000,
@@ -29,11 +34,11 @@ export const config = {
     pythonExecutable: process.env.PYTHON_EXECUTABLE || 'python3',
     maxMemoryMB: parseInt(process.env.MAX_MEMORY_MB || '256', 10),
     defaultTimeoutSeconds: parseInt(process.env.DEFAULT_TIMEOUT_SECONDS || '5', 10),
-    tempDir: process.env.TEMP_DIR || './judging-temp',
+    tempDir: defaultTempDir,
   },
 
   logging: {
     level: process.env.LOG_LEVEL || 'info',
-    dir: process.env.LOG_DIR || './logs',
+    dir: defaultLogDir,
   },
 };

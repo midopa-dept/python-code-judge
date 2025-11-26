@@ -10,27 +10,21 @@
 
 ```mermaid
 erDiagram
-    students ||--o{ submissions : "제출"
-    students ||--o{ session_students : "참여"
-    students ||--o{ scoreboards : "순위"
-    students ||--o{ audit_logs : "기록"
-
-    administrators ||--o{ problems : "작성"
-    administrators ||--o{ education_sessions : "생성"
-    administrators ||--o{ audit_logs : "기록"
+    users ||--o{ submissions : "제출"
+    users ||--o{ session_students : "참여"
+    users ||--o{ scoreboards : "순위"
+    users ||--o{ audit_logs : "기록"
 
     problems ||--o{ test_cases : "포함"
     problems ||--o{ submissions : "대상"
     problems ||--o{ session_problems : "할당"
 
-    submissions ||--|| judging_results : "채점"
     submissions }o--|| education_sessions : "세션"
-
     education_sessions ||--o{ session_students : "학생"
     education_sessions ||--o{ session_problems : "문제"
     education_sessions ||--o{ scoreboards : "스코어보드"
 
-    students {
+    users {
         bigserial id PK
         varchar military_id UK
         varchar login_id UK
@@ -38,20 +32,11 @@ erDiagram
         varchar password_hash
         varchar email
         varchar group_info
+        varchar role
         varchar account_status
         timestamp created_at
         timestamp last_login
-    }
-
-    administrators {
-        bigserial id PK
-        varchar login_id UK
-        varchar name
-        varchar password_hash
-        varchar role_level
-        varchar account_status
-        timestamp created_at
-        timestamp last_login
+        timestamp updated_at
     }
 
     problems {
@@ -62,12 +47,11 @@ erDiagram
         integer difficulty
         integer time_limit
         integer memory_limit
-        bigint author_id FK
+        varchar visibility
+        jsonb judge_config
+        bigint created_by FK
         timestamp created_at
         timestamp updated_at
-        varchar visibility
-        decimal accuracy_rate
-        integer submission_count
     }
 
     test_cases {
@@ -76,7 +60,7 @@ erDiagram
         text input_data
         text expected_output
         boolean is_public
-        integer order
+        integer test_order
         timestamp created_at
         timestamp updated_at
     }
@@ -88,21 +72,14 @@ erDiagram
         bigint session_id FK
         text code
         integer code_size
-        timestamp submitted_at
-        varchar judging_status
-        bigint result_id FK
-        varchar python_version
-    }
-
-    judging_results {
-        bigserial id PK
-        bigint submission_id FK
         varchar status
-        integer passed_cases
-        integer total_cases
+        varchar python_version
         integer execution_time
         integer memory_usage
+        integer passed_cases
+        integer total_cases
         text error_message
+        timestamp submitted_at
         timestamp judged_at
     }
 
@@ -128,7 +105,7 @@ erDiagram
     session_problems {
         bigint session_id PK_FK
         bigint problem_id PK_FK
-        integer order
+        integer problem_order
     }
 
     scoreboards {
