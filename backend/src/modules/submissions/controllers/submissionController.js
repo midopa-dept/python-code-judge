@@ -49,6 +49,37 @@ export const submissionController = {
       next(error);
     }
   },
+
+  async getSubmissions(req, res, next) {
+    try {
+      const { studentId, problemId, sessionId, status, limit, offset, page } = req.query || {};
+      const result = await submissionService.getSubmissions(
+        { studentId, problemId, sessionId, status, limit, offset, page },
+        req.user
+      );
+
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async getSubmissionResult(req, res, next) {
+    try {
+      const { id } = req.params;
+      const detail = await submissionService.getSubmissionResult(id, req.user);
+
+      res.status(200).json({
+        success: true,
+        data: detail,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
 };
 
 export default submissionController;

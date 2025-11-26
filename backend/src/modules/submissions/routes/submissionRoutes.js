@@ -32,6 +32,20 @@ const handleUpload = (req, res, next) => {
 // 모든 요청에 인증 적용
 router.use(authenticate);
 
+// 제출 목록 조회
+router.get(
+  '/submissions',
+  requireRole('student', 'admin', 'super_admin'),
+  submissionController.getSubmissions
+);
+
+// 제출 결과 상세 조회
+router.get(
+  '/submissions/:id/result',
+  requireRole('student', 'admin', 'super_admin'),
+  submissionController.getSubmissionResult
+);
+
 // 학생만 제출 가능
 router.post(
   '/submissions',
