@@ -108,9 +108,10 @@ const clampTimeout = (value) => {
 };
 
 const ensureTempDir = async (baseDir) => {
-  await fs.promises.mkdir(baseDir, { recursive: true });
+  const resolved = path.resolve(baseDir);
+  await fs.promises.mkdir(resolved, { recursive: true });
   const unique = crypto.randomBytes(8).toString('hex');
-  return fs.promises.mkdtemp(path.join(baseDir, `run-${unique}-`));
+  return fs.promises.mkdtemp(path.join(resolved, `run-${unique}-`));
 };
 
 const removeDirSafe = async (dirPath) => {
