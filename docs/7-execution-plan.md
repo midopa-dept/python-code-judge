@@ -38,13 +38,14 @@
 | Phase | 작업 내용 | 예상 소요 시간 | 누적 시간 |
 |-------|----------|---------------|----------|
 | **Phase 0** | 환경 설정 및 프로젝트 초기화 | 4시간 | 4시간 |
-| **Phase 1** | 데이터베이스 설계 및 구축 | 4시간 | 8시간 |
+| **Phase 1** | 데이터베이스 설계 및 구축 (로컬 PostgreSQL) | 4시간 | 8시간 |
 | **Phase 2** | 백엔드 코어 개발 | 8시간 | 16시간 |
 | **Phase 3** | 채점 엔진 개발 | 8시간 | 24시간 |
 | **Phase 4** | 프론트엔드 개발 | 8시간 | 32시간 |
-| **Phase 5** | 통합 테스트 및 배포 | 4시간 | 36시간 |
+| **Phase 5** | 통합 테스트, Supabase 마이그레이션 및 배포 | 6시간 | 38시간 |
 
-**총 예상 소요 시간**: 36시간 (약 3일, 하루 12시간 작업 기준)
+**총 예상 소요 시간**: 38시간 (약 3-4일, 하루 10-12시간 작업 기준)
+**데이터베이스 전략**: Phase 0-4는 로컬 PostgreSQL, Phase 5에서 Supabase로 마이그레이션 후 배포
 
 ---
 
@@ -59,56 +60,75 @@
 #### 완료 조건 체크리스트
 
 ##### 1. 개발 환경 설정
-- [ ] Node.js (v18+) 및 npm 설치 확인
+- [x] Node.js (v18+) 및 npm 설치 확인
   - 완료 조건: `node -v`, `npm -v` 정상 실행
   - 의존성: 없음
+  - **완료**: v24.11.1, npm 11.6.2
 
-- [ ] Python (3.8-3.12) 설치 및 환경 확인
+- [x] Python (3.8-3.12) 설치 및 환경 확인
   - 완료 조건: 여러 버전 Python 실행 가능
   - 의존성: 없음
+  - **완료**: Python 3.14.0
 
-- [ ] Git 설정 및 브랜치 전략 확립
+- [x] Git 설정 및 브랜치 전략 확립
   - 완료 조건: main, develop 브랜치 생성
   - 의존성: 없음
+  - **완료**: main 브랜치 사용 중
 
 ##### 2. 외부 서비스 설정
-- [ ] Supabase 프로젝트 생성
+- [x] 로컬 PostgreSQL 설치 및 설정
+  - 완료 조건: PostgreSQL 서버 실행 (localhost:5432)
+  - 의존성: 없음
+  - **완료**: 로컬 PostgreSQL 사용 중
+
+- [x] Supabase 프로젝트 생성 (Phase 5 배포용)
   - 완료 조건: Database URL, API Key 발급
   - 의존성: 없음
+  - **완료**: vgfmidpmbqnmkccjzfzn.supabase.co
+  - **비고**: Phase 5 배포 시점까지 사용 보류
 
 - [ ] Vercel 계정 생성 및 프로젝트 연결
   - 완료 조건: Frontend/Backend 프로젝트 생성
   - 의존성: GitHub Repository
+  - **보류**: Phase 5에서 배포 시 진행 예정
 
-- [ ] GitHub Repository 생성 및 기본 구조 설정
+- [x] GitHub Repository 생성 및 기본 구조 설정
   - 완료 조건: README, .gitignore, LICENSE 작성
   - 의존성: 없음
+  - **완료**: midopa-dept/python-code-judge
 
 ##### 3. 프로젝트 구조 초기화
-- [ ] Backend 디렉토리 구조 생성
+- [x] Backend 디렉토리 구조 생성
   - 완료 조건: src/modules, src/shared, src/config 폴더 생성
   - 의존성: 없음
+  - **완료**: backend/src/{config,modules,shared} 생성
 
-- [ ] Frontend 디렉토리 구조 생성
+- [x] Frontend 디렉토리 구조 생성
   - 완료 조건: src/components, src/pages, src/api 폴더 생성
   - 의존성: 없음
+  - **완료**: frontend/src/{components,pages,api,utils,styles} 생성
 
-- [ ] 환경 변수 템플릿 작성
-  - 완료 조건: .env.example 파일 작성
+- [x] 환경 변수 템플릿 작성
+  - 완료 조건: .env.example 파일 작성 (로컬 PostgreSQL + Supabase 모두 포함)
   - 의존성: 없음
+  - **완료**: .env.example 작성 완료
+  - **비고**: DATABASE_CONNECTION_STRING (로컬), DATABASE_URL (Supabase) 분리
 
 ##### 4. 개발 도구 설정
-- [ ] ESLint + Prettier 설정
+- [x] ESLint + Prettier 설정
   - 완료 조건: .eslintrc, .prettierrc 파일 작성
   - 의존성: 없음
+  - **완료**: Backend/Frontend 모두 설정 완료
 
 - [ ] Husky + lint-staged 설정
   - 완료 조건: 커밋 전 자동 린트 실행
   - 의존성: npm 패키지 설치
+  - **보류**: 선택 사항으로 추후 진행
 
-- [ ] 테스트 프레임워크 설정 (Jest)
+- [x] 테스트 프레임워크 설정 (Jest)
   - 완료 조건: jest.config.js 작성, 샘플 테스트 실행
   - 의존성: npm 패키지 설치
+  - **완료**: Backend Jest 설정 및 샘플 테스트 작성
 
 **병렬 수행 가능**: 개발 환경 설정, 외부 서비스 설정, 개발 도구 설정은 동시 진행 가능
 
@@ -116,9 +136,10 @@
 
 ### Phase 1: 데이터베이스 설계 및 구축
 
-**목표**: PostgreSQL 스키마 구축 및 Supabase 연동
+**목표**: PostgreSQL 스키마 구축 (로컬 환경)
 **의존성**: Phase 0 완료 후 시작 가능
 **예상 소요**: 4시간
+**환경**: 로컬 PostgreSQL (localhost:5432) 사용
 
 #### 완료 조건 체크리스트
 
@@ -136,18 +157,18 @@
   - 완료 조건: 비즈니스 규칙 반영 (난이도 1-5, 카테고리 검증 등)
   - 의존성: 테이블 생성 완료
 
-##### 2. Supabase 연동
+##### 2. 로컬 PostgreSQL 연동
+- [ ] 로컬 PostgreSQL 데이터베이스 생성
+  - 완료 조건: `CREATE DATABASE python_judge_dev;` 실행 완료
+  - 의존성: PostgreSQL 설치 (localhost:5432)
+
 - [ ] 마이그레이션 실행
-  - 완료 조건: Supabase 대시보드에서 테이블 확인
+  - 완료 조건: 로컬 DB에 모든 테이블 생성 확인 (psql 또는 pgAdmin)
   - 의존성: 마이그레이션 스크립트 완료
 
-- [ ] Row Level Security (RLS) 정책 설정
-  - 완료 조건: 학생/관리자 권한별 접근 제어
-  - 의존성: 테이블 생성 완료
-
 - [ ] 데이터베이스 연결 테스트
-  - 완료 조건: Node.js에서 Supabase 쿼리 성공
-  - 의존성: Supabase URL/Key 설정
+  - 완료 조건: Node.js에서 로컬 PostgreSQL 쿼리 성공
+  - 의존성: DATABASE_CONNECTION_STRING 설정
 
 ##### 3. 시드 데이터 준비
 - [ ] 관리자 계정 시드 데이터 작성
@@ -163,6 +184,7 @@
   - 의존성: problems, test_cases 테이블 생성
 
 **병렬 수행 가능**: 시드 데이터 작성은 스키마 설계와 병렬 진행 가능
+**주의사항**: Phase 0-4는 모두 로컬 PostgreSQL 환경에서 개발 및 테스트 진행
 
 ---
 
@@ -473,13 +495,13 @@
 
 ### Phase 5: 통합 테스트 및 배포
 
-**목표**: 전체 기능 통합 테스트 및 Vercel 배포
+**목표**: 전체 기능 통합 테스트, Supabase 마이그레이션 및 Vercel 배포
 **의존성**: Phase 2, 3, 4 완료 후 시작 가능
-**예상 소요**: 4시간
+**예상 소요**: 6시간 (Supabase 마이그레이션 +2시간)
 
 #### 완료 조건 체크리스트
 
-##### 1. 통합 테스트
+##### 1. 통합 테스트 (로컬 환경)
 - [ ] 엔드투엔드 시나리오 테스트
   - 완료 조건: 로그인 → 문제 선택 → 코드 제출 → 결과 확인 성공
   - 의존성: 전체 시스템 통합
@@ -492,7 +514,7 @@
   - 완료 조건: 10개 제출 동시 처리 성공
   - 의존성: 채점 엔진
 
-##### 2. 보안 검증
+##### 2. 보안 검증 (로컬 환경)
 - [ ] 금지 모듈 사용 코드 제출 테스트
   - 완료 조건: os, subprocess 등 사용 시 SE 반환
   - 의존성: AST 분석기
@@ -505,24 +527,49 @@
   - 완료 조건: 대용량 리스트 생성 시 MLE 반환
   - 의존성: 채점 엔진
 
-##### 3. 배포 설정
+##### 3. Supabase 마이그레이션
+- [ ] 로컬 DB 스키마 검증
+  - 완료 조건: 로컬 PostgreSQL의 모든 테이블, 인덱스, 제약조건 확인
+  - 의존성: Phase 1-4 완료
+
+- [ ] 마이그레이션 스크립트 준비
+  - 완료 조건: 로컬 DB에서 사용한 SQL 스크립트를 Supabase용으로 정리
+  - 의존성: 로컬 DB 검증 완료
+
+- [ ] Supabase 프로젝트 데이터베이스 초기화
+  - 완료 조건: Supabase 대시보드에서 모든 테이블 생성 확인
+  - 의존성: 마이그레이션 스크립트 준비
+
+- [ ] Row Level Security (RLS) 정책 설정
+  - 완료 조건: 학생/관리자 권한별 접근 제어 (선택사항)
+  - 의존성: Supabase 테이블 생성
+
+- [ ] 시드 데이터 이전
+  - 완료 조건: 관리자 계정, 샘플 문제를 Supabase로 이전
+  - 의존성: Supabase 테이블 생성
+
+- [ ] Supabase 연결 테스트
+  - 완료 조건: Backend에서 DATABASE_URL로 Supabase 쿼리 성공
+  - 의존성: 시드 데이터 이전 완료
+
+##### 4. 배포 설정
 - [ ] Vercel 환경 변수 설정
-  - 완료 조건: DATABASE_URL, JWT_SECRET 등 설정
-  - 의존성: Vercel 프로젝트
+  - 완료 조건: DATABASE_URL (Supabase), JWT_SECRET 등 설정
+  - 의존성: Vercel 프로젝트, Supabase 마이그레이션 완료
 
 - [ ] Backend 배포 (Vercel Functions)
-  - 완료 조건: API 엔드포인트 정상 동작
-  - 의존성: Backend 코드 완료
+  - 완료 조건: API 엔드포인트 정상 동작 (Supabase 연결 확인)
+  - 의존성: Backend 코드 완료, Supabase 연결 테스트 완료
 
 - [ ] Frontend 배포 (Vercel)
   - 완료 조건: 프로덕션 URL 접속 가능
   - 의존성: Frontend 코드 완료
 
-- [ ] GitHub Actions CI/CD 설정
+- [ ] GitHub Actions CI/CD 설정 (선택사항)
   - 완료 조건: main 브랜치 푸시 시 자동 배포
   - 의존성: .github/workflows/deploy.yml
 
-##### 4. 문서화
+##### 5. 문서화
 - [ ] API 문서 작성 (Swagger 또는 Postman)
   - 완료 조건: 모든 엔드포인트 문서화
   - 의존성: API 완료
@@ -532,10 +579,10 @@
   - 의존성: UI 완료
 
 - [ ] 배포 가이드 작성
-  - 완료 조건: 환경 변수 설정, 배포 절차 문서화
+  - 완료 조건: 환경 변수 설정, 배포 절차, Supabase 마이그레이션 방법 문서화
   - 의존성: 배포 완료
 
-##### 5. 운영 준비
+##### 6. 운영 준비
 - [ ] 헬스체크 엔드포인트 확인
   - 완료 조건: GET /api/health 정상 응답
   - 의존성: Backend 배포
@@ -549,6 +596,8 @@
   - 의존성: Supabase 설정
 
 **병렬 수행 가능**: 문서화 작업은 통합 테스트와 병렬 진행 가능
+
+**중요**: Phase 5는 로컬 환경 검증 → Supabase 마이그레이션 → Vercel 배포 순서로 진행
 
 ---
 
