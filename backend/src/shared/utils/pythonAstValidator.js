@@ -1,4 +1,7 @@
 import { spawnSync } from 'child_process';
+import { writeFileSync, unlinkSync } from 'fs';
+import { join } from 'path';
+import { tmpdir } from 'os';
 import { config } from '../../config/env.js';
 import AppError from '../errors/AppError.js';
 const ALLOWED_MODULES = new Set([
@@ -14,7 +17,7 @@ const ALLOWED_MODULES = new Set([
 const BANNED_MODULES = new Set(['os', 'subprocess', 'socket', 'urllib', 'eval', 'exec', 'importlib']);
 const BANNED_FUNCTIONS = new Set(['eval', 'exec', '__import__', 'compile']);
 
-const buildAnalyzerScript = () => `
+const buildAnalyzerScript = (codeFilePath) => `
 import ast
 import json
 import sys
@@ -23,7 +26,12 @@ ALLOWED_MODULES = set(${JSON.stringify([...ALLOWED_MODULES])})
 BANNED_MODULES = set(${JSON.stringify([...BANNED_MODULES])})
 BANNED_FUNCTIONS = set(${JSON.stringify([...BANNED_FUNCTIONS])})
 
-code = sys.stdin.read()
+try:
+    with open(r"${codeFilePath}", "r", encoding="utf-8") as f:
+        code = f.read()
+except Exception as exc:
+    print(json.dumps({"status": "SE", "message": f"파일 읽기 실패: {str(exc)}"}))
+    sys.exit(0)
 
 try:
     tree = ast.parse(code)
@@ -84,8 +92,7 @@ const normalizeExecutables = (options) => {
   if (options?.pythonExecutables?.length) {
     candidates.push(...options.pythonExecutables);
   } else {
-    candidates.push(options?.pythonExecutable || config.judging.pythonExecutable || 'python3');
-    candidates.push('python');
+    candidates.push(options?.pythonExecutable || config.judging.pythonExecutable || 'python');
   }
   return [...new Set(candidates.filter(Boolean))];
 };
@@ -123,59 +130,87 @@ export const analyzePythonCode = (code, options = {}) => {
     };
   }
 
-  const analyzerScript = buildAnalyzerScript();
-  const executables = normalizeExecutables(options);
-  let lastError;
+  // 임시 파일 생성
+  const tmpFile = join(tmpdir(), `python-code-${Date.now()}-${Math.random().toString(36).slice(2)}.py`);
 
-  for (const exe of executables) {
-    const result = spawnSync(exe, ['-c', analyzerScript], {
-      input: code,
-      encoding: 'utf8',
-    });
+  try {
+    // 코드를 임시 파일에 쓰기
+    writeFileSync(tmpFile, code, 'utf8');
 
-    if (result.error) {
-      lastError = result.error;
-      continue;
-    }
+    const analyzerScript = buildAnalyzerScript(tmpFile);
+    const executables = normalizeExecutables(options);
+    let lastError;
 
-    const payload = parsePythonResult((result.stdout || '').trim());
+    for (const exe of executables) {
+      const result = spawnSync(exe, ['-c', analyzerScript], {
+        encoding: 'utf8',
+      });
 
-    if (payload.status === 'OK') {
-      return { status: 'OK', passed: true };
-    }
+      if (result.error) {
+        lastError = result.error;
+        continue;
+      }
 
-    if (payload.status === 'SE') {
-      return {
-        status: 'SE',
-        passed: false,
-        message: payload.message || '문법 오류가 감지되었습니다.',
-      };
-    }
+      const stdout = (result.stdout || '').trim();
+      const stderr = (result.stderr || '').trim();
 
-    if (payload.status === 'REJECTED') {
+      if (!stdout) {
+        // stdout이 비어있으면 stderr 확인
+        if (stderr) {
+          console.error(`[AST Validator] Python stderr: ${stderr}`);
+          lastError = new Error(`Python 실행 오류: ${stderr}`);
+          continue;
+        }
+        lastError = new Error('Python 실행 결과가 비어있습니다.');
+        continue;
+      }
+
+      const payload = parsePythonResult(stdout);
+
+      if (payload.status === 'OK') {
+        return { status: 'OK', passed: true };
+      }
+
+      if (payload.status === 'SE') {
+        return {
+          status: 'SE',
+          passed: false,
+          message: payload.message || '문법 오류가 감지되었습니다.',
+        };
+      }
+
+      if (payload.status === 'REJECTED') {
+        return {
+          status: 'REJECTED',
+          passed: false,
+          errors: payload.errors || [],
+        };
+      }
+
       return {
         status: 'REJECTED',
         passed: false,
-        errors: payload.errors || [],
+        message: '알 수 없는 AST 분석 결과입니다.',
       };
     }
 
-    return {
-      status: 'REJECTED',
-      passed: false,
-      message: '알 수 없는 AST 분석 결과입니다.',
-    };
-  }
+    if (lastError) {
+      throw new AppError(
+        'Python 실행 파일을 찾지 못했습니다. PYTHON_EXECUTABLE 설정을 확인하세요.',
+        500,
+        'PYTHON_EXEC_NOT_FOUND'
+      );
+    }
 
-  if (lastError) {
-    throw new AppError(
-      'Python 실행 파일을 찾지 못했습니다. PYTHON_EXECUTABLE 설정을 확인하세요.',
-      500,
-      'PYTHON_EXEC_NOT_FOUND'
-    );
+    throw new AppError('AST 분석을 수행하지 못했습니다.', 500, 'AST_EXECUTION_FAILED');
+  } finally {
+    // 임시 파일 삭제
+    try {
+      unlinkSync(tmpFile);
+    } catch (err) {
+      // 임시 파일 삭제 실패는 무시
+    }
   }
-
-  throw new AppError('AST 분석을 수행하지 못했습니다.', 500, 'AST_EXECUTION_FAILED');
 };
 
 export default analyzePythonCode;

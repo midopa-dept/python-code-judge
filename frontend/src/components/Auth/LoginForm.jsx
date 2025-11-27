@@ -50,7 +50,15 @@ const LoginForm = ({ onSignupOpen, onPasswordResetOpen, onSuccess }) => {
       }
       toast.showSuccess("로그인에 성공했습니다.");
       if (onSuccess) onSuccess();
-      navigate("/");
+
+      // 역할에 따라 적절한 페이지로 리다이렉트
+      if (activeTab === "student") {
+        navigate("/student");
+      } else if (activeTab === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
     } catch (err) {
       const message = err?.response?.data?.message || "로그인에 실패했습니다. 입력값을 확인해주세요.";
       toast.showError(message);

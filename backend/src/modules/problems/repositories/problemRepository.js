@@ -21,6 +21,7 @@ export const problemRepository = {
       SELECT
         p.id,
         p.title,
+        p.score,
         p.category,
         p.difficulty,
         p.visibility,
@@ -41,6 +42,13 @@ export const problemRepository = {
         ) as is_solved
       FROM problems p
       LEFT JOIN submissions s ON p.id = s.problem_id
+      LEFT JOIN LATERAL (
+        SELECT status
+        FROM submissions su
+        WHERE su.problem_id = p.id AND su.student_id = $${params.length + 1}
+        ORDER BY su.submitted_at DESC
+        LIMIT 1
+      ) last_user_submission ON true
       ${whereClause}
       GROUP BY p.id
       ORDER BY p.created_at DESC
@@ -62,6 +70,7 @@ export const problemRepository = {
       SELECT
         p.id,
         p.title,
+        p.score,
         p.description,
         p.category,
         p.difficulty,
@@ -89,6 +98,13 @@ export const problemRepository = {
       FROM problems p
       LEFT JOIN users u ON p.created_by = u.id
       LEFT JOIN submissions s ON p.id = s.problem_id
+      LEFT JOIN LATERAL (
+        SELECT status
+        FROM submissions su
+        WHERE su.problem_id = p.id AND su.student_id = $2
+        ORDER BY su.submitted_at DESC
+        LIMIT 1
+      ) last_user_submission ON true
       WHERE p.id = $1
       GROUP BY p.id, u.name
     `;
@@ -264,6 +280,7 @@ export const problemRepository = {
       difficulty: 'difficulty',
       timeLimit: 'time_limit',
       memoryLimit: 'memory_limit',
+      score: 'score',
       visibility: 'visibility',
     };
 

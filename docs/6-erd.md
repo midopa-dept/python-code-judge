@@ -47,6 +47,7 @@ erDiagram
         text description
         varchar category
         integer difficulty
+        integer score
         integer time_limit
         integer memory_limit
         varchar visibility
@@ -172,6 +173,7 @@ erDiagram
 | description  | text         | NOT NULL                  | 문제 설명 (마크다운)                      |
 | category     | varchar(50)  | NOT NULL                  | 카테고리 (입출력/조건문/반복문/리스트 등) |
 | difficulty   | integer      | NOT NULL, CHECK 1-5       | 난이도 (1-5)                              |
+| score        | integer      | NOT NULL, DEFAULT 1, CHECK >0 | 문제 점수(기본 1점)                      |
 | time_limit   | integer      | NOT NULL, CHECK 1-10      | 시간 제한 (초)                            |
 | memory_limit | integer      | NOT NULL, DEFAULT 256     | 메모리 제한 (MB)                          |
 | visibility   | varchar(20)  | NOT NULL, DEFAULT 'draft' | 공개 상태 (public/private/draft)          |
@@ -331,6 +333,7 @@ erDiagram
 
 - students/administrators → users 통합으로 모든 FK가 users 참조
 - submissions → judging_results 1:1 관계 제거 (테이블 통합)
+- 문제 점수 컬럼 추가(`problems.score`), 스코어는 문제 정답 시 해당 점수를 누적 (기본 1점)
 
 ---
 

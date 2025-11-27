@@ -102,7 +102,7 @@ export const config = {
   },
 
   judging: {
-    pythonExecutable: process.env.PYTHON_EXECUTABLE || 'python3',
+    pythonExecutable: process.env.PYTHON_EXECUTABLE || 'python',
     maxMemoryMB: parseInt(process.env.MAX_MEMORY_MB || '256', 10),
     defaultTimeoutSeconds: parseInt(process.env.DEFAULT_TIMEOUT_SECONDS || '5', 10),
     maxCodeBytes: parseInt(process.env.MAX_CODE_BYTES || String(64 * 1024), 10),

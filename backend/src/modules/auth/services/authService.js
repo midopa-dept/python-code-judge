@@ -7,12 +7,23 @@ export const authService = {
   // 학생 회원가입
   async signup(username, password, military_number, name, rank) {
     const militaryNumber = military_number?.trim() || null;
-    const duplicateLoginQuery = `
-      SELECT id FROM users WHERE login_id = $1
-    `;
-    const duplicateLoginResult = await query(duplicateLoginQuery, [username]);
+
+    const duplicateLoginResult = await query(
+      `SELECT id FROM users WHERE login_id = $1`,
+      [username]
+    );
     if (duplicateLoginResult.rows.length > 0) {
       throw new ConflictError('이미 사용 중인 아이디입니다.');
+    }
+
+    if (militaryNumber) {
+      const duplicateMilResult = await query(
+        `SELECT id FROM users WHERE military_id = $1`,
+        [militaryNumber]
+      );
+      if (duplicateMilResult.rows.length > 0) {
+        throw new ConflictError('이미 사용 중인 군번입니다.');
+      }
     }
 
     const passwordHash = await hashPassword(password);
@@ -101,9 +112,9 @@ export const authService = {
   },
 
   // 비밀번호 찾기(재설정)
-  async resetPassword(username, new_password) {
+  async resetPassword(username, new_password, military_number) {
     const userQuery = `
-      SELECT id, login_id, name, account_status
+      SELECT id, login_id, name, account_status, military_id
       FROM users
       WHERE login_id = $1
     `;
@@ -116,6 +127,10 @@ export const authService = {
     const user = result.rows[0];
     if (user.account_status !== 'active') {
       throw new UnauthorizedError('휴면이거나 정지된 계정입니다.');
+    }
+
+    if (military_number && user.military_id && user.military_id !== military_number) {
+      throw new ValidationError('군번이 일치하지 않습니다.');
     }
 
     const passwordHash = await hashPassword(new_password);
@@ -158,5 +173,37 @@ export const authService = {
     await query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [passwordHash, user.id]);
 
     return { message: '비밀번호가 변경되었습니다.' };
+  },
+
+  // 현재 로그인한 사용자 정보 조회
+  async getCurrentUser(userId) {
+    const userQuery = `
+      SELECT id, login_id, name, email, role, group_info, military_id, account_status, created_at, last_login
+      FROM users
+      WHERE id = $1
+    `;
+
+    const result = await query(userQuery, [userId]);
+    if (result.rows.length === 0) {
+      throw new AppError('사용자를 찾을 수 없습니다.', 404, 'USER_NOT_FOUND');
+    }
+
+    const user = result.rows[0];
+    if (user.account_status !== 'active') {
+      throw new UnauthorizedError('휴면이거나 정지된 계정입니다.');
+    }
+
+    return {
+      id: user.id,
+      loginId: user.login_id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      groupInfo: user.group_info,
+      militaryNumber: user.military_id,
+      accountStatus: user.account_status,
+      createdAt: user.created_at,
+      lastLogin: user.last_login,
+    };
   },
 };

@@ -15,9 +15,11 @@ export class ProblemModel {
       category: row.category,
       difficulty: row.difficulty,
       visibility: row.visibility,
+      score: row.score ?? 1,
       accuracyRate: parseFloat(row.accuracy_rate),
       submissionCount: parseInt(row.submission_count, 10),
       isSolved: row.is_solved,
+      lastStatus: row.last_status || null,
     };
   }
 
@@ -36,11 +38,13 @@ export class ProblemModel {
       difficulty: row.difficulty,
       timeLimit: row.time_limit,
       memoryLimit: row.memory_limit,
+      score: row.score ?? 1,
       visibility: row.visibility,
       judgeConfig: row.judge_config || {},
       accuracyRate: parseFloat(row.accuracy_rate),
       submissionCount: parseInt(row.submission_count, 10),
       isSolved: row.is_solved,
+      lastStatus: row.last_status || null,
       publicTestCases: testCases,
       authorName: row.author_name,
       createdAt: row.created_at,
@@ -60,6 +64,7 @@ export class ProblemModel {
       difficulty: data.difficulty,
       timeLimit: data.timeLimit,
       memoryLimit: data.memoryLimit,
+      score: data.score,
       visibility: data.visibility,
       judgeConfig: data.judgeConfig,
     };
@@ -79,6 +84,7 @@ export class ProblemModel {
     if (data.difficulty !== undefined) updateData.difficulty = data.difficulty;
     if (data.timeLimit !== undefined) updateData.timeLimit = data.timeLimit;
     if (data.memoryLimit !== undefined) updateData.memoryLimit = data.memoryLimit;
+    if (data.score !== undefined) updateData.score = data.score;
     if (data.visibility !== undefined) updateData.visibility = data.visibility;
     if (data.judgeConfig !== undefined) updateData.judgeConfig = data.judgeConfig;
 

@@ -58,6 +58,7 @@ CREATE TABLE problems (
     difficulty        INTEGER NOT NULL CHECK (difficulty BETWEEN 1 AND 5),
     time_limit        INTEGER NOT NULL DEFAULT 2 CHECK (time_limit BETWEEN 1 AND 10),
     memory_limit      INTEGER NOT NULL DEFAULT 256 CHECK (memory_limit > 0),
+    score             INTEGER NOT NULL DEFAULT 1 CHECK (score > 0),
     visibility        VARCHAR NOT NULL DEFAULT 'draft' CHECK (visibility IN ('public','private','draft')),
     judge_config      JSONB,
     created_by        BIGINT REFERENCES users(id) ON DELETE SET NULL,

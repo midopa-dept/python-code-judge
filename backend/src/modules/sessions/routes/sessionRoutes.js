@@ -23,6 +23,8 @@ router.use(authenticate);
 
 // 세션 기본 CRUD
 router.get('/', validateGetSessions, sessionController.getSessions);
+router.get('/my/scoreboard', scoreboardController.getMyScoreboard);
+router.get('/scoreboard', scoreboardController.getMyScoreboard);
 router.get('/:id', validateSessionId, sessionController.getSession);
 router.post('/', adminOnly, validateCreateSession, logAction('create'), sessionController.createSession);
 router.put('/:id', adminOnly, validateUpdateSession, logAction('update'), sessionController.updateSession);

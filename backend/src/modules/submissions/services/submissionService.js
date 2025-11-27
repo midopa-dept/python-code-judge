@@ -9,6 +9,7 @@ export const MAX_CODE_BYTES = config.judging.maxCodeBytes;
 export const SUPPORTED_PYTHON_VERSIONS = ['3.8', '3.9', '3.10', '3.11', '3.12'];
 const DUP_WINDOW_SECONDS = 5;
 const ALLOWED_STATUSES = ['AC', 'WA', 'TLE', 'RE', 'SE', 'MLE', 'pending', 'judging'];
+const getPythonExecutable = () => config.judging.pythonExecutable || 'python';
 
 const buildAstErrorMessage = (astResult) => {
   if (astResult?.message) return astResult.message;
@@ -47,7 +48,7 @@ export const createSubmissionService = (deps = {}) => {
   const fetchProblem = async (client, problemId, userRole) => {
     const result = await client.query(
       `
-      SELECT id, title, visibility, time_limit, memory_limit
+      SELECT id, title, visibility, time_limit, memory_limit, score
       FROM problems
       WHERE id = $1
     `,
@@ -83,6 +84,35 @@ export const createSubmissionService = (deps = {}) => {
     if (duplicate.rows.length > 0) {
       throw new AppError('동일 문제에 5초 이내에 다시 제출할 수 없습니다.', 429, 'DUPLICATE_SUBMISSION');
     }
+  };
+
+  const findStudentSessionId = async (client, studentId) => {
+    // 가장 최근 활성 세션 우선, 없으면 가장 최근 참여 세션
+    const active = await client.query(
+      `
+      SELECT es.id
+      FROM education_sessions es
+      JOIN session_students ss ON ss.session_id = es.id
+      WHERE ss.student_id = $1 AND es.status = 'active'
+      ORDER BY es.start_time DESC
+      LIMIT 1
+    `,
+      [studentId]
+    );
+    if (active.rows.length > 0) return active.rows[0].id;
+
+    const latest = await client.query(
+      `
+      SELECT es.id
+      FROM education_sessions es
+      JOIN session_students ss ON ss.session_id = es.id
+      WHERE ss.student_id = $1
+      ORDER BY es.start_time DESC
+      LIMIT 1
+    `,
+      [studentId]
+    );
+    return latest.rows[0]?.id || null;
   };
 
   const insertSubmission = async (client, data) => {
@@ -202,6 +232,18 @@ export const createSubmissionService = (deps = {}) => {
     // 세션이 없는 제출은 스코어보드 대상이 아님
     if (!sessionId) return;
 
+    // 문제 기본 점수 조회 (없으면 1)
+    const scoreRes = await executor(
+      `
+      SELECT score
+      FROM problems
+      WHERE id = $1
+      LIMIT 1
+    `,
+      [problemId]
+    );
+    const problemScore = parseInt(scoreRes.rows?.[0]?.score, 10) || 1;
+
     const solvedBefore = await executor(
       `
       SELECT 1
@@ -222,15 +264,15 @@ export const createSubmissionService = (deps = {}) => {
 
     await executor(
       `
-      INSERT INTO scoreboards (session_id, student_id, score, solved_count, rank, updated_at)
-      VALUES ($1, $2, 1, 1, 1, NOW())
+      INSERT INTO scoreboards AS sb (session_id, student_id, score, solved_count, rank, updated_at)
+      VALUES ($1, $2, $3, 1, 1, NOW())
       ON CONFLICT (session_id, student_id)
       DO UPDATE SET
-        score = score + 1,
-        solved_count = solved_count + 1,
+        score = sb.score + EXCLUDED.score,
+        solved_count = sb.solved_count + 1,
         updated_at = NOW()
     `,
-      [sessionId, studentId]
+      [sessionId, studentId, problemScore]
     );
 
     const ranking = await executor(
@@ -266,7 +308,7 @@ export const createSubmissionService = (deps = {}) => {
     }
   };
 
-  const runAsyncJudge = async (submissionId, code, problem, pythonVersion) => {
+  const runAsyncJudge = async (submissionId, code, problem, pythonVersion, pythonExecutable) => {
     try {
       const testCaseResult = await runQuery(
         `
@@ -290,7 +332,7 @@ export const createSubmissionService = (deps = {}) => {
         testCases,
         defaultTimeLimitSeconds: problem.time_limit,
         defaultMemoryLimitMB: problem.memory_limit,
-        pythonExecutable: pythonVersion,
+        pythonExecutable: pythonExecutable || getPythonExecutable(),
       });
 
       await applyJudgeResult(submissionId, judgeResult, problem);
@@ -542,17 +584,23 @@ export const createSubmissionService = (deps = {}) => {
       const problem = await fetchProblem(client, parsedProblemId, userRole);
       await checkDuplicateSubmission(client, studentId, parsedProblemId);
 
-      const astResult = analyzeCode(code, { pythonExecutable: version });
+      // 세션 ID가 없으면 학생이 참여 중인 세션을 자동 선택
+      const resolvedSessionId =
+        parsedSessionId ??
+        (userRole === 'student' ? await findStudentSessionId(client, studentId) : null);
+
+      const pythonExecutable = getPythonExecutable();
+      const astResult = analyzeCode(code, { pythonExecutable });
       if (astResult.status !== 'OK') {
         const submissionId = await insertSubmission(client, {
           studentId,
-          problemId: parsedProblemId,
-          sessionId: parsedSessionId,
-          code,
-          codeSize,
-          status: 'SE',
-          pythonVersion: version,
-          errorMessage: buildAstErrorMessage(astResult),
+        problemId: parsedProblemId,
+        sessionId: resolvedSessionId,
+        code,
+        codeSize,
+        status: 'SE',
+        pythonVersion: version,
+        errorMessage: buildAstErrorMessage(astResult),
         });
 
         await client.query('COMMIT');
@@ -567,7 +615,7 @@ export const createSubmissionService = (deps = {}) => {
       const submissionId = await insertSubmission(client, {
         studentId,
         problemId: parsedProblemId,
-        sessionId: parsedSessionId,
+        sessionId: resolvedSessionId,
         code,
         codeSize,
         status: 'pending',
@@ -578,7 +626,7 @@ export const createSubmissionService = (deps = {}) => {
 
       // 비동기 채점 시작 (응답은 즉시 반환)
       setImmediate(() => {
-        runAsyncJudge(submissionId, code, problem, version);
+        runAsyncJudge(submissionId, code, problem, version, pythonExecutable);
       });
 
       return {

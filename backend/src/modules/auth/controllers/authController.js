@@ -44,11 +44,12 @@ export const authController = {
   // POST /api/auth/reset-password - 비밀번호 찾기
   async resetPassword(req, res, next) {
     try {
-      const { username, new_password } = req.body;
+      const { username, new_password, military_number } = req.body;
 
       const result = await authService.resetPassword(
         username,
-        new_password
+        new_password,
+        military_number
       );
 
       res.status(200).json({
@@ -76,6 +77,22 @@ export const authController = {
       res.status(200).json({
         success: true,
         message: result.message,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // GET /api/auth/me - 현재 로그인한 사용자 정보 조회
+  async getCurrentUser(req, res, next) {
+    try {
+      const userId = req.user.id; // authenticate 미들웨어에서 설정
+
+      const user = await authService.getCurrentUser(userId);
+
+      res.status(200).json({
+        success: true,
+        data: user,
       });
     } catch (error) {
       next(error);

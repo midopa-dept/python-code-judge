@@ -80,6 +80,7 @@ export const validateCreateSubmission = [
     .withMessage('코드는 1-65536자 사이여야 합니다.'),
 
   body('pythonVersion')
+    .optional()
     .isIn(['3.8', '3.9', '3.10', '3.11', '3.12'])
     .withMessage('Python 버전은 3.8, 3.9, 3.10, 3.11, 3.12 중 하나여야 합니다.'),
 

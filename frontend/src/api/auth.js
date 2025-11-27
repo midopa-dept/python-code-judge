@@ -7,13 +7,14 @@ export const login = async (loginId, password, userType = 'student') => {
       password,
       userType
     });
-    
+
     // Store the token in localStorage
-    if (response.data && response.data.token) {
-      localStorage.setItem('token', response.data.token);
+    const data = response.data.data || response.data;
+    if (data && data.token) {
+      localStorage.setItem('token', data.token);
     }
-    
-    return response.data;
+
+    return data;
   } catch (error) {
     // The axios interceptor will handle 401 errors
     throw error;
@@ -57,7 +58,7 @@ export const resetPassword = async (token, newPassword) => {
 export const getCurrentUser = async () => {
   try {
     const response = await apiClient.get('/auth/me');
-    return response.data;
+    return response.data.data || response.data;
   } catch (error) {
     throw error;
   }

@@ -19,6 +19,16 @@ export const getScoreboard = async (req, res, next) => {
 
     const scoreboard = await sessionService.findScoreboard(parseInt(id));
 
+    const mapped = scoreboard.map((row) => ({
+      sessionId: row.session_id,
+      studentId: row.student_id,
+      studentName: row.student_name || row.name || row.login_id,
+      score: parseInt(row.score, 10) || 0,
+      solvedCount: parseInt(row.solved_count, 10) || 0,
+      rank: parseInt(row.rank, 10) || null,
+      updatedAt: row.updated_at,
+    }));
+
     res.status(200).json({
       success: true,
       data: {
@@ -29,9 +39,56 @@ export const getScoreboard = async (req, res, next) => {
           startTime: session.start_time,
           endTime: session.end_time,
         },
-        scoreboard,
+        scoreboard: mapped,
       },
-      count: scoreboard.length,
+      count: mapped.length,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/sessions/my/scoreboard - 현재 학생 세션 스코어보드 조회
+ */
+export const getMyScoreboard = async (req, res, next) => {
+  try {
+    const studentId = req.user.id;
+    const session = await sessionService.findStudentCurrentSession(studentId);
+
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: '참여 중인 세션이 없습니다',
+      });
+    }
+
+    const scoreboard = await sessionService.findScoreboard(session.id);
+
+    const mapped = scoreboard.map((row) => ({
+      sessionId: row.session_id,
+      studentId: row.student_id,
+      studentName: row.student_name || row.name || row.login_id,
+      score: parseInt(row.score, 10) || 0,
+      solvedCount: parseInt(row.solved_count, 10) || 0,
+      rank: parseInt(row.rank, 10) || null,
+      updatedAt: row.updated_at,
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: {
+        session: {
+          id: session.id,
+          name: session.name,
+          status: session.status,
+          startTime: session.start_time,
+          endTime: session.end_time,
+        },
+        scoreboard: mapped,
+      },
+      count: mapped.length,
     });
   } catch (error) {
     next(error);

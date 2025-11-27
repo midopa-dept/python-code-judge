@@ -23,4 +23,7 @@ router.post('/reset-password', validatePasswordReset, logAction('reset_password'
 // PUT /api/auth/change-password - 비밀번호 변경 (인증 필요)
 router.put('/change-password', authenticate, validatePasswordChange, logAction('change_password'), authController.changePassword);
 
+// GET /api/auth/me - 현재 로그인한 사용자 정보 조회 (인증 필요)
+router.get('/me', authenticate, authController.getCurrentUser);
+
 export default router;

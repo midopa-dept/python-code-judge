@@ -57,7 +57,7 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <Link to="/" className="text-xl font-bold text-primary-600">
+            <Link to="/student" className="text-xl font-bold text-primary-600">
               Python Judge
             </Link>
           </div>
@@ -65,18 +65,28 @@ const Header = () => {
           {currentUser && (
             <nav className="hidden md:block">
               <div className="ml-10 flex items-center space-x-8">
-                <Link
-                  to="/problems"
-                  className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  문제
-                </Link>
-                <Link
-                  to="/submissions"
-                  className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  제출 이력
-                </Link>
+                {currentUser.role === "student" && (
+                  <>
+                    <Link
+                      to="/student"
+                      className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
+                    >
+                      문제
+                    </Link>
+                    <Link
+                      to="/student/submissions"
+                      className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
+                    >
+                      제출 이력
+                    </Link>
+                    <Link
+                      to="/student/scoreboard"
+                      className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
+                    >
+                      스코어보드
+                    </Link>
+                  </>
+                )}
                 {currentUser.role === "admin" && (
                   <Link
                     to="/admin"

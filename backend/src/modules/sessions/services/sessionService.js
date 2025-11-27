@@ -343,8 +343,16 @@ export const findSessionProblems = async (sessionId) => {
 export const findScoreboard = async (sessionId) => {
   const sql = `
     SELECT
-      sb.session_id, sb.student_id, sb.score, sb.solved_count, sb.rank, sb.updated_at,
-      s.military_id, s.login_id, s.name, s.group_info
+      sb.session_id,
+      sb.student_id,
+      sb.score,
+      sb.solved_count,
+      sb.rank,
+      sb.updated_at,
+      s.military_id,
+      s.login_id,
+      s.name AS student_name,
+      s.group_info
     FROM scoreboards sb
     JOIN users s ON s.id = sb.student_id
     WHERE sb.session_id = $1
@@ -353,4 +361,32 @@ export const findScoreboard = async (sessionId) => {
 
   const result = await query(sql, [sessionId]);
   return result.rows;
+};
+
+/**
+ * 학생이 참여 중인 세션 중 활성 상태를 우선으로 하나 선택
+ * 활성 세션이 없으면 가장 최근 참여 세션을 반환
+ */
+export const findStudentCurrentSession = async (studentId) => {
+  const activeSql = `
+    SELECT es.*
+    FROM education_sessions es
+    JOIN session_students ss ON ss.session_id = es.id
+    WHERE ss.student_id = $1 AND es.status = 'active'
+    ORDER BY es.start_time DESC
+    LIMIT 1
+  `;
+  const active = await query(activeSql, [studentId]);
+  if (active.rows.length > 0) return active.rows[0];
+
+  const latestSql = `
+    SELECT es.*
+    FROM education_sessions es
+    JOIN session_students ss ON ss.session_id = es.id
+    WHERE ss.student_id = $1
+    ORDER BY es.start_time DESC
+    LIMIT 1
+  `;
+  const latest = await query(latestSql, [studentId]);
+  return latest.rows[0] || null;
 };

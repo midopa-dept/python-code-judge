@@ -144,7 +144,7 @@ export const runIsolatedPython = async ({
 
   const timeLimit = clampTimeout(timeLimitSeconds ?? config.judging.defaultTimeoutSeconds);
   const memLimit = memoryLimitMB ?? config.judging.maxMemoryMB ?? 256;
-  const pythonExe = pythonExecutable || config.judging.pythonExecutable || 'python3';
+  const pythonExe = pythonExecutable || config.judging.pythonExecutable || 'python';
   const baseTempDir = tempDir || config.judging.tempDir || path.join(os.tmpdir(), 'judging-temp');
 
   const runDir = await ensureTempDir(baseTempDir);
