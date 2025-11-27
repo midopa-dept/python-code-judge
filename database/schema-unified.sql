@@ -22,7 +22,6 @@ DROP TABLE IF EXISTS users CASCADE;
 -- 1) 통합 사용자 테이블
 CREATE TABLE users (
     id               BIGSERIAL PRIMARY KEY,
-    military_id      VARCHAR UNIQUE CHECK (military_id IS NULL OR military_id ~ '^[A-Za-z0-9-]{5,20}$'),
     login_id         VARCHAR NOT NULL UNIQUE CHECK (char_length(login_id) BETWEEN 4 AND 20),
     name             VARCHAR NOT NULL CHECK (char_length(name) BETWEEN 2 AND 50),
     password_hash    VARCHAR NOT NULL,

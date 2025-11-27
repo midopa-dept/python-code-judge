@@ -9,11 +9,11 @@ VALUES
     ('super_admin', '슈퍼 관리자', '$2b$10$rW5qYhKz.JVuX8YvN7RVj.YwQ8xVx6OxK8N2XqK3Z5M1xZ9Qz8K9K', 'super_admin', 'active');
 
 -- 2. 테스트 학생 계정 (비밀번호: student123)
-INSERT INTO students (military_id, login_id, name, password_hash, email, group_info, account_status)
+INSERT INTO students (login_id, name, password_hash, email, group_info, account_status)
 VALUES
-    ('24-12345', 'student01', '김철수', '$2b$10$rW5qYhKz.JVuX8YvN7RVj.YwQ8xVx6OxK8N2XqK3Z5M1xZ9Qz8K9K', 'kim@example.com', '1소대', 'active'),
-    ('24-12346', 'student02', '이영희', '$2b$10$rW5qYhKz.JVuX8YvN7RVj.YwQ8xVx6OxK8N2XqK3Z5M1xZ9Qz8K9K', 'lee@example.com', '1소대', 'active'),
-    ('24-12347', 'student03', '박민수', '$2b$10$rW5qYhKz.JVuX8YvN7RVj.YwQ8xVx6OxK8N2XqK3Z5M1xZ9Qz8K9K', 'park@example.com', '2소대', 'active');
+    ('student01', '김철수', '$2b$10$rW5qYhKz.JVuX8YvN7RVj.YwQ8xVx6OxK8N2XqK3Z5M1xZ9Qz8K9K', 'kim@example.com', '1소대', 'active'),
+    ('student02', '이영희', '$2b$10$rW5qYhKz.JVuX8YvN7RVj.YwQ8xVx6OxK8N2XqK3Z5M1xZ9Qz8K9K', 'lee@example.com', '1소대', 'active'),
+    ('student03', '박민수', '$2b$10$rW5qYhKz.JVuX8YvN7RVj.YwQ8xVx6OxK8N2XqK3Z5M1xZ9Qz8K9K', 'park@example.com', '2소대', 'active');
 
 -- 3. 샘플 문제 3개
 INSERT INTO problems (title, description, category, difficulty, time_limit, memory_limit, author_id, visibility, accuracy_rate, submission_count)

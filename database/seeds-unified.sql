@@ -4,16 +4,16 @@
 BEGIN;
 
 -- 1. 관리자 및 학생 계정 (비밀번호: admin123 / student123, bcrypt 해시)
-INSERT INTO users (military_id, login_id, name, password_hash, email, group_info, role, account_status)
+INSERT INTO users (login_id, name, password_hash, email, group_info, role, account_status)
 VALUES
     -- 슈퍼 관리자
-    (NULL, 'super_admin', '슈퍼 관리자', '$2a$10$rcH0fv8djSoSIMY4HvCzLedE/2YwAznqOlIiVDAaDXXb2szaRx6cK', 'super@example.com', NULL, 'super_admin', 'active'),
+    ('super_admin', '슈퍼 관리자', '$2a$10$rcH0fv8djSoSIMY4HvCzLedE/2YwAznqOlIiVDAaDXXb2szaRx6cK', 'super@example.com', NULL, 'super_admin', 'active'),
     -- 일반 관리자
-    (NULL, 'admin01', '김관리', '$2a$10$rcH0fv8djSoSIMY4HvCzLedE/2YwAznqOlIiVDAaDXXb2szaRx6cK', 'admin01@example.com', NULL, 'admin', 'active'),
+    ('admin01', '김관리', '$2a$10$rcH0fv8djSoSIMY4HvCzLedE/2YwAznqOlIiVDAaDXXb2szaRx6cK', 'admin01@example.com', NULL, 'admin', 'active'),
     -- 학생들
-    ('24-12345', 'student01', '김철수', '$2a$10$JoP0mWDvkqio4fmwD1M7DOR1Z0b/V52EkIqquUxxQ3AR5eXFwXRcG', 'kim@example.com', '1소대', 'student', 'active'),
-    ('24-12346', 'student02', '이영희', '$2a$10$JoP0mWDvkqio4fmwD1M7DOR1Z0b/V52EkIqquUxxQ3AR5eXFwXRcG', 'lee@example.com', '1소대', 'student', 'active'),
-    ('24-12347', 'student03', '박민수', '$2a$10$JoP0mWDvkqio4fmwD1M7DOR1Z0b/V52EkIqquUxxQ3AR5eXFwXRcG', 'park@example.com', '2소대', 'student', 'active');
+    ('student01', '김철수', '$2a$10$JoP0mWDvkqio4fmwD1M7DOR1Z0b/V52EkIqquUxxQ3AR5eXFwXRcG', 'kim@example.com', '1소대', 'student', 'active'),
+    ('student02', '이영희', '$2a$10$JoP0mWDvkqio4fmwD1M7DOR1Z0b/V52EkIqquUxxQ3AR5eXFwXRcG', 'lee@example.com', '1소대', 'student', 'active'),
+    ('student03', '박민수', '$2a$10$JoP0mWDvkqio4fmwD1M7DOR1Z0b/V52EkIqquUxxQ3AR5eXFwXRcG', 'park@example.com', '2소대', 'student', 'active');
 
 -- 2. 샘플 문제 3개
 INSERT INTO problems (title, description, category, difficulty, time_limit, memory_limit, created_by, visibility)

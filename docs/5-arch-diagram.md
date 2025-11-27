@@ -133,7 +133,6 @@ erDiagram
 
     users {
         bigserial id PK
-        varchar military_id UK
         varchar login_id UK
         varchar name
         varchar password_hash
@@ -292,45 +291,50 @@ graph TB
 
 ## 8. 기술 스택 요약
 
-| 계층 | 기술 | 역할 |
-|------|------|------|
-| **Frontend** | React + Tailwind CSS | UI 렌더링, 사용자 인터랙션 |
-| **Backend** | Node.js + Express | REST API, 비즈니스 로직 |
-| **Database** | PostgreSQL (Supabase 예정) | 데이터 저장 및 관리 |
-| **채점** | subprocess (Python 3.8-3.12) | AST 검사 + 코드 실행 및 채점 |
-| **인증** | JWT | 무상태 인증 |
-| **보안** | AST + subprocess | 코드 정적 분석 + 프로세스 격리 |
-| **배포** | Render Web Service (컨테이너) | 컨테이너 배포, 자동 HTTPS |
-| **CI/CD** | GitHub Actions | 자동 테스트 및 배포 |
-| **버전 관리** | GitHub | 소스 코드 관리 및 협업 |
-| **보안 모듈** | AST + 금지 모듈 차단 | os, subprocess, socket, eval 등 차단 |
+| 계층          | 기술                          | 역할                                 |
+| ------------- | ----------------------------- | ------------------------------------ |
+| **Frontend**  | React + Tailwind CSS          | UI 렌더링, 사용자 인터랙션           |
+| **Backend**   | Node.js + Express             | REST API, 비즈니스 로직              |
+| **Database**  | PostgreSQL (Supabase 예정)    | 데이터 저장 및 관리                  |
+| **채점**      | subprocess (Python 3.8-3.12)  | AST 검사 + 코드 실행 및 채점         |
+| **인증**      | JWT                           | 무상태 인증                          |
+| **보안**      | AST + subprocess              | 코드 정적 분석 + 프로세스 격리       |
+| **배포**      | Render Web Service (컨테이너) | 컨테이너 배포, 자동 HTTPS            |
+| **CI/CD**     | GitHub Actions                | 자동 테스트 및 배포                  |
+| **버전 관리** | GitHub                        | 소스 코드 관리 및 협업               |
+| **보안 모듈** | AST + 금지 모듈 차단          | os, subprocess, socket, eval 등 차단 |
 
 ---
 
 ## 9. 주요 특징
 
 ### 9.1 컨테이너 우선
+
 - Express 기반 모듈러 모놀리스 (Render Web Service)
 - 채점 엔진과 API가 동일 컨테이너 내 subprocess로 동작
 - PostgreSQL은 Supabase로 이전 예정 (현 개발 단계는 로컬)
 
 ### 9.2 Stateless 설계
+
 - JWT 기반 무상태 인증
 - 수평 확장 용이
 - 세션 저장소 불필요
 
 ### 9.3 보안 우선
+
 - AST 정적 분석으로 악성 코드 사전 차단
 - subprocess 프로세스 격리
 - 타임아웃 및 메모리 제한
 - RBAC 권한 관리
 
 ### 9.4 실시간 피드백
+
 - 평균 5초 이내 채점 완료
 - 폴링 방식 스코어보드 업데이트 (3-5초 간격)
 - 즉각적인 학습 피드백
 
 ### 9.5 성능 목표
+
 - 채점 응답 시간: 평균 5초, 최대 30초
 - API 응답 시간: 95% 요청 1초 이내
 - 동시 접속 처리: 30명
@@ -342,19 +346,19 @@ graph TB
 
 ### 10.1 기술적 제약사항
 
-| 제약사항 | 영향 | 대응 방안 |
-|---------|------|----------|
-| **Docker 사용 불가** | 컨테이너 격리 불가능 | subprocess 격리 + AST 정적 분석 |
-| **컨테이너 자원 한도** | CPU/메모리 제한 | 기본 5초 제한, 필요 시 스케일업 |
+| 제약사항                   | 영향                         | 대응 방안                                   |
+| -------------------------- | ---------------------------- | ------------------------------------------- |
+| **Docker 사용 불가**       | 컨테이너 격리 불가능         | subprocess 격리 + AST 정적 분석             |
+| **컨테이너 자원 한도**     | CPU/메모리 제한              | 기본 5초 제한, 필요 시 스케일업             |
 | **Supabase 미연동 (현재)** | 관리형 기능(RLS/백업) 미사용 | 로컬 Postgres로 개발, 배포 시 Supabase 전환 |
 
 ### 10.2 보안 정책
 
-| 항목 | 금지 | 허용 |
-|------|------|------|
-| **모듈** | os, subprocess, socket, urllib, eval, exec | math, random, itertools, collections, string, re, datetime, json 등 |
-| **파일 I/O** | 시스템 파일 접근 | 임시 디렉토리만 허용 |
-| **네트워크** | 모든 네트워크 통신 | 차단 |
+| 항목         | 금지                                       | 허용                                                                |
+| ------------ | ------------------------------------------ | ------------------------------------------------------------------- |
+| **모듈**     | os, subprocess, socket, urllib, eval, exec | math, random, itertools, collections, string, re, datetime, json 등 |
+| **파일 I/O** | 시스템 파일 접근                           | 임시 디렉토리만 허용                                                |
+| **네트워크** | 모든 네트워크 통신                         | 차단                                                                |
 
 ---
 
