@@ -5,6 +5,11 @@ import { authenticate, authorize, requireStudent } from '../../../middleware/aut
 import { logAction } from '../../audit/middleware/auditMiddleware.js';
 import AppError from '../../../shared/errors/AppError.js';
 import { MAX_CODE_BYTES } from '../services/submissionService.js';
+import {
+  validateGetSubmissions,
+  validateSubmissionId,
+  validateCreateSubmission,
+} from '../validators/submissionValidator.js';
 
 const router = express.Router();
 
@@ -36,6 +41,7 @@ router.use(authenticate);
 router.get(
   '/submissions',
   authorize('student', 'admin', 'super_admin'),
+  validateGetSubmissions,
   submissionController.getSubmissions
 );
 
@@ -43,6 +49,7 @@ router.get(
 router.get(
   '/submissions/:id/result',
   authorize('student', 'admin', 'super_admin'),
+  validateSubmissionId,
   submissionController.getSubmissionResult
 );
 
@@ -51,6 +58,7 @@ router.post(
   '/submissions',
   requireStudent,
   handleUpload,
+  validateCreateSubmission,
   logAction('submit'),
   submissionController.createSubmission
 );
@@ -59,6 +67,7 @@ router.post(
 router.post(
   '/submissions/:id/cancel',
   requireStudent,
+  validateSubmissionId,
   submissionController.cancelSubmission
 );
 

@@ -1,6 +1,11 @@
 import express from 'express';
 import { userController } from '../controllers/userController.js';
 import { authenticate, requireAdmin } from '../../../middleware/authMiddleware.js';
+import {
+  validateGetStudents,
+  validateStudentId,
+  validateUpdateStudent,
+} from '../validators/userValidator.js';
 
 const router = express.Router();
 
@@ -11,16 +16,18 @@ router.use(authenticate);
 router.get(
   '/students',
   requireAdmin,
+  validateGetStudents,
   userController.getStudents
 );
 
 // GET /api/users/students/:id - 학생 상세 조회 (본인 또는 관리자)
-router.get('/students/:id', userController.getStudent);
+router.get('/students/:id', validateStudentId, userController.getStudent);
 
 // PATCH /api/users/students/:id - 학생 정보 수정 (관리자 전용)
 router.patch(
   '/students/:id',
   requireAdmin,
+  validateUpdateStudent,
   userController.updateStudent
 );
 
@@ -28,6 +35,7 @@ router.patch(
 router.delete(
   '/students/:id',
   requireAdmin,
+  validateStudentId,
   userController.deleteStudent
 );
 

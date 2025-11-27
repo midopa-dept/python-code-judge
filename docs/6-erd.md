@@ -29,7 +29,6 @@ erDiagram
 
     users {
         bigserial id PK
-        varchar military_id UK
         varchar login_id UK
         varchar name
         varchar password_hash
@@ -160,7 +159,6 @@ erDiagram
 
 - students, administrators 테이블을 하나로 통합
 - role 컬럼으로 역할 구분 (RBAC 패턴)
-- military_id는 학생(role='student')만 필수, 관리자는 NULL
 - 모든 사용자가 하나의 테이블에서 관리되어 인증/인가 로직 단순화
 
 ### 2.2 problems (문제)
@@ -343,7 +341,6 @@ erDiagram
 | 테이블             | 인덱스                   | 타입    |
 | ------------------ | ------------------------ | ------- |
 | users              | id                       | PK      |
-| users              | military_id              | UNIQUE  |
 | users              | login_id                 | UNIQUE  |
 | problems           | id                       | PK      |
 | problems           | title                    | UNIQUE  |
@@ -394,7 +391,6 @@ erDiagram
 
 | 테이블             | 제약조건명                     | 조건                                                                                                                             |
 | ------------------ | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| users              | chk_users_military_id_format   | military_id IS NULL OR military_id ~ '^[A-Za-z0-9-]{5,20}$'                                                                      |
 | users              | chk_users_login_id_length      | char_length(login_id) BETWEEN 4 AND 20                                                                                           |
 | users              | chk_users_name_length          | char_length(name) BETWEEN 2 AND 50                                                                                               |
 | users              | chk_users_role                 | role IN ('student', 'admin', 'super_admin')                                                                                      |
@@ -463,7 +459,7 @@ erDiagram
 
 **단점 및 대응**:
 
-- 학생 전용 필드(military_id, group_info) 일부 NULL 허용
+- 학생 전용 필드(group_info) 일부 NULL 허용
   → CHECK 제약조건으로 role='student'일 때 필수 검증 (애플리케이션 레벨)
 
 ### 6.2 submissions 테이블 통합 (submissions + judging_results)
