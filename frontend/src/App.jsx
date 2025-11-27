@@ -6,6 +6,7 @@ import ProblemListPage from './pages/student/ProblemListPage';
 import ProblemDetailPage from './pages/student/ProblemDetailPage';
 import SubmissionsPage from './pages/student/SubmissionsPage';
 import ScoreboardPage from './pages/student/ScoreboardPage';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import ProtectedRoute from './components/Common/ProtectedRoute';
 
 function App() {
@@ -46,6 +47,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['student']}>
               <ScoreboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'super_admin']}>
+              <AdminDashboardPage />
             </ProtectedRoute>
           }
         />
