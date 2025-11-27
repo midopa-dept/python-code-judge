@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { getCurrentUser, logout } from '../../api/auth';
-import { useToast } from '../Notification/useToast';
+﻿import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { getCurrentUser, logout } from "../../api/auth";
+import { useToast } from "../Notification/useToast";
 
 const Header = () => {
   const [currentUser, setCurrentUser] = useState(null);
@@ -15,7 +15,6 @@ const Header = () => {
         const user = await getCurrentUser();
         setCurrentUser(user);
       } catch (error) {
-        // User is not authenticated
         setCurrentUser(null);
       } finally {
         setLoading(false);
@@ -29,10 +28,10 @@ const Header = () => {
     try {
       logout();
       setCurrentUser(null);
-      toast.showSuccess('로그아웃 되었습니다.');
-      navigate('/');
+      toast.showSuccess("로그아웃 했습니다.");
+      navigate("/");
     } catch (error) {
-      toast.showError('로그아웃에 실패했습니다.');
+      toast.showError("로그아웃에 실패했습니다.");
     }
   };
 
@@ -62,45 +61,45 @@ const Header = () => {
               Python Judge
             </Link>
           </div>
-          
-          <nav className="hidden md:block">
-            <div className="ml-10 flex items-center space-x-8">
-              {currentUser ? (
-                <>
-                  <Link to="/problems" className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
-                    문제
+
+          {currentUser && (
+            <nav className="hidden md:block">
+              <div className="ml-10 flex items-center space-x-8">
+                <Link
+                  to="/problems"
+                  className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  문제
+                </Link>
+                <Link
+                  to="/submissions"
+                  className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  제출 이력
+                </Link>
+                {currentUser.role === "admin" && (
+                  <Link
+                    to="/admin"
+                    className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    관리자
                   </Link>
-                  <Link to="/submissions" className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
-                    제출 내역
-                  </Link>
-                  {currentUser.role === 'admin' && (
-                    <Link to="/admin" className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
-                      관리자
-                    </Link>
-                  )}
-                </>
-              ) : (
-                <>
-                  <Link to="/login" className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
-                    로그인
-                  </Link>
-                  <Link to="/signup" className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
-                    회원가입
-                  </Link>
-                </>
-              )}
-            </div>
-          </nav>
-          
+                )}
+              </div>
+            </nav>
+          )}
+
           <div className="flex items-center">
             {currentUser ? (
               <div className="flex items-center space-x-4">
                 <div className="text-sm text-gray-700">
-                  <span className="hidden md:inline">안녕하세요, </span>
+                  <span className="hidden md:inline">안녕하세요 </span>
                   <span className="font-medium">{currentUser.name}</span>
-                  <span className="ml-1 text-xs bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full">
-                    {currentUser.role === 'admin' ? '관리자' : '학생'}
-                  </span>
+                  {currentUser.role && (
+                    <span className="ml-1 text-xs bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full">
+                      {currentUser.role === "admin" ? "관리자" : "학생"}
+                    </span>
+                  )}
                 </div>
                 <button
                   onClick={handleLogout}
@@ -110,12 +109,12 @@ const Header = () => {
                 </button>
               </div>
             ) : (
-              <div className="flex space-x-2">
-                <Link
-                  to="/login"
-                  className="text-sm text-gray-700 hover:text-primary-600 font-medium"
-                >
+              <div className="flex space-x-4">
+                <Link to="/login" className="text-sm text-gray-700 hover:text-primary-600 font-medium">
                   로그인
+                </Link>
+                <Link to="/signup" className="text-sm text-gray-700 hover:text-primary-600 font-medium">
+                  회원가입
                 </Link>
               </div>
             )}
