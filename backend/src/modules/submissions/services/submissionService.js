@@ -1,4 +1,4 @@
-﻿import { getClient, query as defaultQuery } from '../../../config/database.js';
+import { getClient, query as defaultQuery } from '../../../config/database.js';
 import { analyzePythonCode as defaultAnalyze } from '../../../shared/utils/pythonAstValidator.js';
 import { judgeSubmission as defaultJudge } from '../../../shared/utils/judgeRunner.js';
 import logger from '../../../shared/utils/logger.js';
@@ -17,22 +17,22 @@ const buildAstErrorMessage = (astResult) => {
       .map((e) => e.target)
       .join(', ');
     if (bannedModules) {
-      return `湲덉???紐⑤뱢 ?ъ슜 媛먯?: ${bannedModules}`;
+      return `금지된 모듈 사용 감지: ${bannedModules}`;
     }
     const bannedFunctions = astResult.errors
       .filter((e) => e.type === 'BANNED_FUNCTION')
       .map((e) => e.target)
       .join(', ');
     if (bannedFunctions) {
-      return `湲덉????⑥닔 ?ъ슜 媛먯?: ${bannedFunctions}`;
+      return `금지된 함수 사용 감지: ${bannedFunctions}`;
     }
-    return 'AST 寃利앹뿉 ?ㅽ뙣?덉뒿?덈떎.';
+    return 'AST 검증에 실패했습니다.';
   }
-  return 'AST 寃利앹뿉 ?ㅽ뙣?덉뒿?덈떎.';
+  return 'AST 검증에 실패했습니다.';
 };
 
 /**
- * ?섏〈?깆쓣 二쇱엯 媛?ν븳 ?쒖텧 ?쒕퉬???앹꽦
+ * 의존성을 주입 가능한 제출 서비스 생성
  */
 export const createSubmissionService = (deps = {}) => {
   const {
@@ -54,13 +54,13 @@ export const createSubmissionService = (deps = {}) => {
     );
 
     if (result.rows.length === 0) {
-      throw new NotFoundError('臾몄젣瑜?李얠쓣 ???놁뒿?덈떎.');
+      throw new NotFoundError('문제를 찾을 수 없습니다.');
     }
 
     const problem = result.rows[0];
 
     if (userRole === 'student' && problem.visibility !== 'public') {
-      throw new ForbiddenError('鍮꾧났媛?臾몄젣???쒖텧?????놁뒿?덈떎.');
+      throw new ForbiddenError('비공개 문제에 제출할 수 없습니다.');
     }
 
     return problem;
@@ -80,7 +80,7 @@ export const createSubmissionService = (deps = {}) => {
     );
 
     if (duplicate.rows.length > 0) {
-      throw new AppError('?숈씪 臾몄젣??5珥??대궡???ㅼ떆 ?쒖텧?????놁뒿?덈떎.', 429, 'DUPLICATE_SUBMISSION');
+      throw new AppError('동일 문제에 5초 이내에 다시 제출할 수 없습니다.', 429, 'DUPLICATE_SUBMISSION');
     }
   };
 
@@ -188,7 +188,7 @@ export const createSubmissionService = (deps = {}) => {
     );
 
     if (res.rows.length === 0) {
-      throw new NotFoundError('?쒖텧??李얠쓣 ???놁뒿?덈떎.');
+      throw new NotFoundError('제출을 찾을 수 없습니다.');
     }
 
     return res.rows[0];
@@ -360,7 +360,7 @@ export const createSubmissionService = (deps = {}) => {
     const params = [];
     let paramCount = 0;
 
-    // 沅뚰븳: ?숈깮? 蹂몄씤 ?쒖텧留? 愿由ъ옄???좏깮?곸쑝濡?studentId ?꾪꽣 ?곸슜
+    // 권한: 학생은 본인 제출만, 관리자는 선택적으로 studentId 필터 적용
     if (requester.role === 'student') {
       paramCount++;
       conditions.push(`s.student_id = $${paramCount}`);
@@ -385,7 +385,7 @@ export const createSubmissionService = (deps = {}) => {
 
     if (filters.status) {
       if (!ALLOWED_STATUSES.includes(filters.status)) {
-        throw new ValidationError('吏?먰븯吏 ?딅뒗 梨꾩젏 ?곹깭?낅땲??');
+        throw new ValidationError('지원하지 않는 채점 상태입니다.');
       }
       paramCount++;
       conditions.push(`s.status = $${paramCount}`);
@@ -481,13 +481,13 @@ export const createSubmissionService = (deps = {}) => {
     const submissionResult = await runQuery(resultQuery, [submissionId]);
 
     if (submissionResult.rows.length === 0) {
-      throw new NotFoundError('?쒖텧??李얠쓣 ???놁뒿?덈떎.');
+      throw new NotFoundError('제출을 찾을 수 없습니다.');
     }
 
     const submission = submissionResult.rows[0];
 
     if (requester.role === 'student' && requester.id !== submission.student_id) {
-      throw new ForbiddenError('蹂몄씤 ?쒖텧留?議고쉶?????덉뒿?덈떎.');
+      throw new ForbiddenError('본인 제출만 조회할 수 있습니다.');
     }
 
     return {
@@ -509,28 +509,28 @@ export const createSubmissionService = (deps = {}) => {
 
   const submitCode = async ({ studentId, userRole, problemId, sessionId, code, pythonVersion }) => {
     if (!studentId) {
-      throw new ValidationError('?ъ슜???뺣낫媛 ?꾩슂?⑸땲??');
+      throw new ValidationError('사용자 정보가 필요합니다.');
     }
 
     const parsedProblemId = parseInt(problemId, 10);
     if (!parsedProblemId) {
-      throw new ValidationError('problemId???レ옄?ъ빞 ?⑸땲??');
+      throw new ValidationError('problemId는 숫자여야 합니다.');
     }
 
     const parsedSessionId = sessionId ? parseInt(sessionId, 10) : null;
 
     const version = pythonVersion || '3.10';
     if (!SUPPORTED_PYTHON_VERSIONS.includes(version)) {
-      throw new ValidationError('吏?먰븯吏 ?딅뒗 Python 踰꾩쟾?낅땲??');
+      throw new ValidationError('지원하지 않는 Python 버전입니다.');
     }
 
     if (typeof code !== 'string' || code.trim().length === 0) {
-      throw new ValidationError('?쒖텧??肄붾뱶媛 鍮꾩뼱 ?덉뒿?덈떎.');
+      throw new ValidationError('제출할 코드가 비어 있습니다.');
     }
 
     const codeSize = Buffer.byteLength(code, 'utf8');
     if (codeSize > MAX_CODE_BYTES) {
-      throw new AppError('肄붾뱶 ?ш린媛 64KB瑜?珥덇낵?덉뒿?덈떎.', 413, 'CODE_SIZE_EXCEEDED');
+      throw new AppError('코드 크기가 64KB를 초과했습니다.', 413, 'CODE_SIZE_EXCEEDED');
     }
 
     const client = await getDbClient();
@@ -575,7 +575,7 @@ export const createSubmissionService = (deps = {}) => {
 
       await client.query('COMMIT');
 
-      // 鍮꾨룞湲?梨꾩젏 ?쒖옉 (?묐떟? 利됱떆 諛섑솚)
+      // 비동기 채점 시작 (응답은 즉시 반환)
       setImmediate(() => {
         runAsyncJudge(submissionId, code, problem, version);
       });
@@ -583,7 +583,7 @@ export const createSubmissionService = (deps = {}) => {
       return {
         submissionId,
         status: 'pending',
-        message: '?쒖텧???묒닔?섏뿀?듬땲?? 梨꾩젏??以鍮꾪빀?덈떎.',
+        message: '제출을 접수했습니다. 채점을 준비합니다.',
       };
     } catch (error) {
       await client.query('ROLLBACK');
@@ -604,5 +604,3 @@ export const createSubmissionService = (deps = {}) => {
 export const submissionService = createSubmissionService();
 
 export default submissionService;
-
-
