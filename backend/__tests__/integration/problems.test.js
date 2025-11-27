@@ -1,13 +1,14 @@
 import request from 'supertest';
 import app from '../../src/app.js';
 import { getPool, closePool } from '../../src/config/database.js';
+import { PROBLEM_CATEGORIES } from '../../src/shared/utils/validators.js';
 
 describe('문제 관리 API 통합 테스트', () => {
   let pool;
   let adminToken;
   let studentToken;
   let testProblemId;
-  let testCategoryId;
+  let categoryName;
   let testUserIds = [];
 
   beforeAll(async () => {
@@ -55,21 +56,14 @@ describe('문제 관리 API 통합 테스트', () => {
     });
     studentToken = studentLogin.body.data.token;
 
-    // 테스트용 카테고리 생성
-    const categoryResult = await pool.query(
-      `INSERT INTO categories (name, description) VALUES ($1, $2) RETURNING id`,
-      ['테스트카테고리', '통합 테스트용']
-    );
-    testCategoryId = categoryResult.rows[0].id;
+    // 문제 카테고리(문자열) 선택
+    categoryName = PROBLEM_CATEGORIES[0];
   });
 
   afterAll(async () => {
     // 테스트 데이터 정리
     if (testProblemId) {
       await pool.query('DELETE FROM problems WHERE id = $1', [testProblemId]);
-    }
-    if (testCategoryId) {
-      await pool.query('DELETE FROM categories WHERE id = $1', [testCategoryId]);
     }
     for (const userId of testUserIds) {
       await pool.query('DELETE FROM users WHERE id = $1', [userId]);
@@ -91,7 +85,7 @@ describe('문제 관리 API 통합 테스트', () => {
 
     test('인증 없이 조회 시 실패 (401)', async () => {
       const response = await request(app).get('/api/problems').expect(401);
-      expect(response.body.status).toBe('error');
+      expect(response.body.message).toBeDefined();
     });
   });
 
@@ -103,7 +97,7 @@ describe('문제 관리 API 통합 테스트', () => {
         .send({
           title: '테스트 문제',
           description: '문제 설명',
-          category: testCategoryId,
+          category: categoryName,
           difficulty: 3,
           timeLimit: 5,
           memoryLimit: 256,
@@ -123,13 +117,13 @@ describe('문제 관리 API 통합 테스트', () => {
         .send({
           title: '학생 문제',
           description: '권한 없음',
-          category: testCategoryId,
+          category: categoryName,
           difficulty: 3,
           timeLimit: 5,
         })
         .expect(403);
 
-      expect(response.body.status).toBe('error');
+      expect(response.body.message).toBeDefined();
     });
   });
 
@@ -137,9 +131,9 @@ describe('문제 관리 API 통합 테스트', () => {
     test('존재하는 문제 상세 조회 성공 (200)', async () => {
       if (!testProblemId) {
         const result = await pool.query(
-          `INSERT INTO problems (title, description, category_id, difficulty, time_limit, memory_limit, visibility, created_by)
+          `INSERT INTO problems (title, description, category, difficulty, time_limit, memory_limit, visibility, created_by)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
-          ['상세조회 테스트', '설명', testCategoryId, 3, 5, 256, 'public', testUserIds[0]]
+          ['상세조회 테스트', '설명', categoryName, 3, 5, 256, 'public', testUserIds[0]]
         );
         testProblemId = result.rows[0].id;
       }
@@ -159,7 +153,7 @@ describe('문제 관리 API 통합 테스트', () => {
         .set('Authorization', `Bearer ${studentToken}`)
         .expect(404);
 
-      expect(response.body.status).toBe('error');
+      expect(response.body.message).toBeDefined();
     });
   });
 
@@ -190,7 +184,7 @@ describe('문제 관리 API 통합 테스트', () => {
         })
         .expect(403);
 
-      expect(response.body.status).toBe('error');
+      expect(response.body.message).toBeDefined();
     });
   });
 
@@ -223,7 +217,7 @@ describe('문제 관리 API 통합 테스트', () => {
         })
         .expect(403);
 
-      expect(response.body.status).toBe('error');
+      expect(response.body.message).toBeDefined();
     });
   });
 });

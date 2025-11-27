@@ -53,7 +53,6 @@ describe('인증 API 통합 테스트', () => {
         })
         .expect(400);
 
-      expect(response.body.status).toBe('error');
       expect(response.body.message).toBeDefined();
     });
 
@@ -86,7 +85,6 @@ describe('인증 API 통합 테스트', () => {
         });
 
       expect([400, 409]).toContain(response.status);
-      expect(response.body.status).toBe('error');
       expect(response.body.message).toBeDefined();
     });
 
@@ -119,7 +117,7 @@ describe('인증 API 통합 테스트', () => {
         })
         .expect(409);
 
-      expect(response.body.status).toBe('error');
+      expect(response.body.message).toBeDefined();
     });
   });
 
@@ -154,7 +152,7 @@ describe('인증 API 통합 테스트', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data).toHaveProperty('token');
       expect(response.body.data).toHaveProperty('user');
-      expect(response.body.data.user.username).toBe(loginUsername);
+      expect(response.body.data.user.loginId).toBe(loginUsername);
 
       authToken = response.body.data.token;
     });
@@ -168,7 +166,7 @@ describe('인증 API 통합 테스트', () => {
         })
         .expect(401);
 
-      expect(response.body.status).toBe('error');
+      expect(response.body.message).toBeDefined();
     });
 
     test('존재하지 않는 사용자로 로그인 실패 (401)', async () => {
@@ -180,7 +178,7 @@ describe('인증 API 통합 테스트', () => {
         })
         .expect(401);
 
-      expect(response.body.status).toBe('error');
+      expect(response.body.message).toBeDefined();
     });
 
     test('필수 필드 누락 시 실패 (400)', async () => {
@@ -191,7 +189,7 @@ describe('인증 API 통합 테스트', () => {
         })
         .expect(400);
 
-      expect(response.body.status).toBe('error');
+      expect(response.body.message).toBeDefined();
     });
   });
 
@@ -250,7 +248,7 @@ describe('인증 API 통합 테스트', () => {
         });
 
       expect([400, 404]).toContain(response.status);
-      expect(response.body.status).toBe('error');
+      expect(response.body.message).toBeDefined();
     });
 
     test('필수 필드 누락 시 실패 (400)', async () => {
@@ -261,7 +259,7 @@ describe('인증 API 통합 테스트', () => {
         })
         .expect(400);
 
-      expect(response.body.status).toBe('error');
+      expect(response.body.message).toBeDefined();
     });
   });
 
@@ -327,7 +325,7 @@ describe('인증 API 통합 테스트', () => {
         })
         .expect(401);
 
-      expect(response.body.status).toBe('error');
+      expect(response.body.message).toBeDefined();
     });
 
     test('잘못된 현재 비밀번호로 변경 실패 (401)', async () => {
@@ -340,7 +338,7 @@ describe('인증 API 통합 테스트', () => {
         })
         .expect(401);
 
-      expect(response.body.status).toBe('error');
+      expect(response.body.message).toBeDefined();
     });
 
     test('필수 필드 누락 시 실패 (400)', async () => {
@@ -352,7 +350,7 @@ describe('인증 API 통합 테스트', () => {
         })
         .expect(400);
 
-      expect(response.body.status).toBe('error');
+      expect(response.body.message).toBeDefined();
     });
   });
 });

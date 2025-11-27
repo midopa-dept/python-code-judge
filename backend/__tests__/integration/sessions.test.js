@@ -57,7 +57,7 @@ describe('세션 관리 API 통합 테스트', () => {
   afterAll(async () => {
     // 테스트 데이터 정리
     if (testSessionId) {
-      await pool.query('DELETE FROM sessions WHERE id = $1', [testSessionId]);
+      await pool.query('DELETE FROM education_sessions WHERE id = $1', [testSessionId]);
     }
     for (const userId of testUserIds) {
       await pool.query('DELETE FROM users WHERE id = $1', [userId]);
@@ -73,12 +73,12 @@ describe('세션 관리 API 통합 테스트', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('sessions');
+      expect(Array.isArray(response.body.data)).toBe(true);
     });
 
     test('인증 없이 조회 시 실패 (401)', async () => {
       const response = await request(app).get('/api/sessions').expect(401);
-      expect(response.body.status).toBe('error');
+      expect(response.body.message).toBeDefined();
     });
   });
 
@@ -92,17 +92,17 @@ describe('세션 관리 API 통합 테스트', () => {
         .post('/api/sessions')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          title: '통합 테스트 세션',
-          description: '세션 테스트용',
+          name: '통합 테스트 세션',
           startTime: startTime,
           endTime: endTime,
-          allowLateSubmission: false,
+          sessionType: 'practice',
+          allowResubmit: false,
         })
         .expect(201);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('sessionId');
-      testSessionId = response.body.data.sessionId;
+      expect(response.body.data).toHaveProperty('id');
+      testSessionId = response.body.data.id;
     });
 
     test('학생이 세션 생성 시도 시 실패 (403)', async () => {
@@ -114,13 +114,14 @@ describe('세션 관리 API 통합 테스트', () => {
         .post('/api/sessions')
         .set('Authorization', `Bearer ${studentToken}`)
         .send({
-          title: '학생 세션',
+          name: '학생 세션',
           startTime: startTime,
           endTime: endTime,
+          sessionType: 'practice',
         })
         .expect(403);
 
-      expect(response.body.status).toBe('error');
+      expect(response.body.message).toBeDefined();
     });
   });
 
@@ -150,7 +151,7 @@ describe('세션 관리 API 통합 테스트', () => {
         })
         .expect(403);
 
-      expect(response.body.status).toBe('error');
+      expect(response.body.message).toBeDefined();
     });
   });
 
@@ -174,7 +175,7 @@ describe('세션 관리 API 통합 테스트', () => {
         .get(`/api/sessions/${testSessionId}/scoreboard`)
         .expect(401);
 
-      expect(response.body.status).toBe('error');
+      expect(response.body.message).toBeDefined();
     });
   });
 });

@@ -5,10 +5,8 @@ const swaggerDoc = require("../swagger/swagger.json"); // Swagger 스펙 로드
 
 const app = express();
 
-// JSON 파싱 미들웨어
-app.use(express.json());
-
-// Mock API 서버 (Swagger 스펙 기반)
+// Mock API 엔드포인트 (Swagger 스펙 기반)
+// createMockMiddleware 내부에서 body-parser를 사용하므로 별도 express.json()을 앞에 두지 않는다.
 app.use("/api", createMockMiddleware({ spec: "../swagger/swagger.json" }));
 
 // Swagger UI 문서
@@ -27,7 +25,7 @@ app.get("/", (req, res) => {
 
 const PORT = 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Mock API Server running on http://localhost:${PORT}`);
-  console.log(`📚 Swagger UI available at http://localhost:${PORT}/docs`);
-  console.log(`🔧 Mock API available at http://localhost:${PORT}/api`);
+  console.log(`Mock API Server running on http://localhost:${PORT}`);
+  console.log(`Swagger UI available at http://localhost:${PORT}/docs`);
+  console.log(`Mock API available at http://localhost:${PORT}/api`);
 });

@@ -18,8 +18,9 @@ async function migrate() {
     console.log('데이터베이스 연결 성공');
 
     // 스키마 파일 읽기 (BOM 제거)
+    // 통합 스키마 사용 (users 테이블 포함)
     let schemaSQL = fs.readFileSync(
-      path.join(__dirname, 'schmea.sql'),
+      path.join(__dirname, 'schema-unified.sql'),
       'utf8'
     );
 
