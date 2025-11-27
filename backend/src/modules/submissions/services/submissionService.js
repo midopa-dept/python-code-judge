@@ -3,8 +3,9 @@ import { analyzePythonCode as defaultAnalyze } from '../../../shared/utils/pytho
 import { judgeSubmission as defaultJudge } from '../../../shared/utils/judgeRunner.js';
 import logger from '../../../shared/utils/logger.js';
 import AppError, { ValidationError, NotFoundError, ForbiddenError } from '../../../shared/errors/AppError.js';
+import { config } from '../../../config/env.js';
 
-export const MAX_CODE_BYTES = 64 * 1024;
+export const MAX_CODE_BYTES = config.judging.maxCodeBytes;
 export const SUPPORTED_PYTHON_VERSIONS = ['3.8', '3.9', '3.10', '3.11', '3.12'];
 const DUP_WINDOW_SECONDS = 5;
 const ALLOWED_STATUSES = ['AC', 'WA', 'TLE', 'RE', 'SE', 'MLE', 'pending', 'judging'];

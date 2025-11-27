@@ -1,8 +1,6 @@
 import { spawnSync } from 'child_process';
 import { config } from '../../config/env.js';
 import AppError from '../errors/AppError.js';
-
-const MAX_CODE_BYTES = 64 * 1024;
 const ALLOWED_MODULES = new Set([
   'math',
   'random',
@@ -114,7 +112,7 @@ export const analyzePythonCode = (code, options = {}) => {
     throw new AppError('코드는 문자열이어야 합니다.', 400, 'INVALID_CODE_TYPE');
   }
 
-  const maxBytes = options.maxBytes || MAX_CODE_BYTES;
+  const maxBytes = options.maxBytes || config.judging.maxCodeBytes;
   const byteLength = Buffer.byteLength(code, 'utf8');
   if (byteLength > maxBytes) {
     return {

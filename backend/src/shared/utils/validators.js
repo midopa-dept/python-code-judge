@@ -1,3 +1,5 @@
+import { config } from '../../config/env.js';
+
 // 문제 카테고리 목록
 export const PROBLEM_CATEGORIES = [
   '입출력',
@@ -18,8 +20,8 @@ export const MIN_DIFFICULTY = 1;
 export const MAX_DIFFICULTY = 5;
 
 // 시간 제한 범위
-export const MIN_TIME_LIMIT = 1;
-export const MAX_TIME_LIMIT = 10;
+export const MIN_TIME_LIMIT = config.judging.minTimeoutSeconds;
+export const MAX_TIME_LIMIT = config.judging.maxTimeoutSeconds;
 
 // 카테고리 유효성 검증
 export const isValidCategory = (category) => {

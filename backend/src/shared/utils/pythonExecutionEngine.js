@@ -6,9 +6,6 @@ import { config } from '../../config/env.js';
 import AppError from '../errors/AppError.js';
 import crypto from 'crypto';
 
-const MIN_TIMEOUT_SECONDS = 1;
-const MAX_TIMEOUT_SECONDS = 10;
-
 const buildRunnerScript = () => `
 import subprocess
 import sys
@@ -104,7 +101,7 @@ print(json.dumps(result))
 
 const clampTimeout = (value) => {
   if (Number.isNaN(value) || value <= 0) return config.judging.defaultTimeoutSeconds;
-  return Math.min(Math.max(value, MIN_TIMEOUT_SECONDS), MAX_TIMEOUT_SECONDS);
+  return Math.min(Math.max(value, config.judging.minTimeoutSeconds), config.judging.maxTimeoutSeconds);
 };
 
 const ensureTempDir = async (baseDir) => {
