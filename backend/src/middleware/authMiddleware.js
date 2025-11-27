@@ -22,7 +22,7 @@ export const authenticate = async (req, res, next) => {
     try {
       const decoded = jwt.verify(token, config.jwt.secret);
 
-      // 통합 users 테이블에서 사용자 정보 조회
+      // 통합 users 테이블에서 사용자 정보 조회 (role 컬럼으로 학생/관리자 구분)
       const result = await query(
         'SELECT id, login_id, name, email, role, account_status FROM users WHERE id = $1',
         [decoded.id]
@@ -56,10 +56,15 @@ export const authenticate = async (req, res, next) => {
 
       next();
     } catch (jwtError) {
+      const message = jwtError.name === 'TokenExpiredError'
+        ? '토큰이 만료되었습니다'
+        : '유효하지 않은 토큰입니다';
+
       return res.status(401).json({
         success: false,
         error: 'Unauthorized',
-        message: '유효하지 않은 토큰입니다',
+        message,
+        errorCode: jwtError.name === 'TokenExpiredError' ? 'TOKEN_EXPIRED' : 'INVALID_TOKEN',
       });
     }
   } catch (error) {
@@ -94,11 +99,18 @@ export const authorize = (...allowedRoles) => {
 };
 
 /**
+ * 학생 전용 미들웨어
+ */
+export const requireStudent = authorize('student');
+
+/**
  * 관리자 전용 미들웨어 (admin, super_admin)
  */
-export const adminOnly = authorize('admin', 'super_admin');
+export const requireAdmin = authorize('admin', 'super_admin');
+export const adminOnly = requireAdmin; // 별칭
 
 /**
  * 최고관리자 전용 미들웨어 (super_admin)
  */
-export const superAdminOnly = authorize('super_admin');
+export const requireSuperAdmin = authorize('super_admin');
+export const superAdminOnly = requireSuperAdmin; // 별칭

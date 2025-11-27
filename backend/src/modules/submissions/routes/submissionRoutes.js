@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import { submissionController } from '../controllers/submissionController.js';
-import { authenticate, requireRole } from '../../../shared/middleware/auth.js';
+import { authenticate, authorize, requireStudent } from '../../../middleware/authMiddleware.js';
 import { logAction } from '../../audit/middleware/auditMiddleware.js';
 import AppError from '../../../shared/errors/AppError.js';
 import { MAX_CODE_BYTES } from '../services/submissionService.js';
@@ -32,24 +32,24 @@ const handleUpload = (req, res, next) => {
 // 모든 요청에 인증 적용
 router.use(authenticate);
 
-// 제출 목록 조회
+// 제출 목록 조회 (모든 인증된 사용자)
 router.get(
   '/submissions',
-  requireRole('student', 'admin', 'super_admin'),
+  authorize('student', 'admin', 'super_admin'),
   submissionController.getSubmissions
 );
 
-// 제출 결과 상세 조회
+// 제출 결과 상세 조회 (모든 인증된 사용자)
 router.get(
   '/submissions/:id/result',
-  requireRole('student', 'admin', 'super_admin'),
+  authorize('student', 'admin', 'super_admin'),
   submissionController.getSubmissionResult
 );
 
 // 학생만 제출 가능
 router.post(
   '/submissions',
-  requireRole('student'),
+  requireStudent,
   handleUpload,
   logAction('submit'),
   submissionController.createSubmission

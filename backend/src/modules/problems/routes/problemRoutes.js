@@ -1,7 +1,7 @@
 import express from 'express';
 import { problemController } from '../controllers/problemController.js';
 import { testCaseController } from '../controllers/testCaseController.js';
-import { authenticate, requireRole } from '../../../shared/middleware/auth.js';
+import { authenticate, requireAdmin } from '../../../middleware/authMiddleware.js';
 import { logAction } from '../../audit/middleware/auditMiddleware.js';
 
 const router = express.Router();
@@ -15,21 +15,21 @@ router.get('/problems/:id', problemController.getProblem);
 
 router.post(
   '/problems',
-  requireRole('admin', 'super_admin'),
+  requireAdmin,
   logAction('create'),
   problemController.createProblem
 );
 
 router.put(
   '/problems/:id',
-  requireRole('admin', 'super_admin'),
+  requireAdmin,
   logAction('update'),
   problemController.updateProblem
 );
 
 router.delete(
   '/problems/:id',
-  requireRole('admin', 'super_admin'),
+  requireAdmin,
   logAction('delete'),
   problemController.deleteProblem
 );
@@ -39,21 +39,21 @@ router.get('/problems/:id/test-cases', testCaseController.getTestCases);
 
 router.post(
   '/problems/:id/test-cases',
-  requireRole('admin', 'super_admin'),
+  requireAdmin,
   logAction('create'),
   testCaseController.createTestCase
 );
 
 router.put(
   '/problems/:id/test-cases/:testCaseId',
-  requireRole('admin', 'super_admin'),
+  requireAdmin,
   logAction('update'),
   testCaseController.updateTestCase
 );
 
 router.delete(
   '/problems/:id/test-cases/:testCaseId',
-  requireRole('admin', 'super_admin'),
+  requireAdmin,
   logAction('delete'),
   testCaseController.deleteTestCase
 );

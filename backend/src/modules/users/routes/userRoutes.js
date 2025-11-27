@@ -1,6 +1,6 @@
 import express from 'express';
 import { userController } from '../controllers/userController.js';
-import { authenticate, requireRole } from '../../../shared/middleware/auth.js';
+import { authenticate, requireAdmin } from '../../../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -10,7 +10,7 @@ router.use(authenticate);
 // GET /api/users/students - 학생 목록 조회 (관리자 전용)
 router.get(
   '/students',
-  requireRole('admin', 'super_admin'),
+  requireAdmin,
   userController.getStudents
 );
 
@@ -20,14 +20,14 @@ router.get('/students/:id', userController.getStudent);
 // PATCH /api/users/students/:id - 학생 정보 수정 (관리자 전용)
 router.patch(
   '/students/:id',
-  requireRole('admin', 'super_admin'),
+  requireAdmin,
   userController.updateStudent
 );
 
 // DELETE /api/users/students/:id - 학생 삭제 (관리자 전용)
 router.delete(
   '/students/:id',
-  requireRole('admin', 'super_admin'),
+  requireAdmin,
   userController.deleteStudent
 );
 
