@@ -167,6 +167,9 @@ CREATE INDEX idx_audit_logs_user_id ON audit_logs(user_id);
 CREATE INDEX idx_audit_logs_performed_at ON audit_logs(performed_at DESC);
 CREATE INDEX idx_audit_logs_action_type ON audit_logs(action_type);
 
+-- 세션별 학생 제출 이력 조회 최적화 (추가)
+CREATE INDEX idx_submissions_session_student ON submissions(session_id, student_id, submitted_at DESC);
+
 -- 트리거 함수
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER AS $$
