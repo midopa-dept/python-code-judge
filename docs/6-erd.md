@@ -1,4 +1,5 @@
 # Python Judge ERD (Entity Relationship Diagram)
+> 업데이트(군번 제거): 군번(military_id)은 신규 가입 시 수집하지 않으며, 필드가 비워진 상태로 저장됩니다.
 
 **버전**: 2.0
 **작성일**: 2025-11-27

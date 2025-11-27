@@ -6,20 +6,13 @@ import AppError, { UnauthorizedError, ValidationError, ConflictError } from '../
 export const authService = {
   // 학생 회원가입
   async signup(username, password, military_number, name, rank) {
+    const militaryNumber = military_number?.trim() || null;
     const duplicateLoginQuery = `
       SELECT id FROM users WHERE login_id = $1
     `;
     const duplicateLoginResult = await query(duplicateLoginQuery, [username]);
     if (duplicateLoginResult.rows.length > 0) {
       throw new ConflictError('이미 사용 중인 아이디입니다.');
-    }
-
-    const duplicateMilitaryQuery = `
-      SELECT id FROM users WHERE military_id = $1
-    `;
-    const duplicateMilitaryResult = await query(duplicateMilitaryQuery, [military_number]);
-    if (duplicateMilitaryResult.rows.length > 0) {
-      throw new ConflictError('이미 등록된 군번입니다.');
     }
 
     const passwordHash = await hashPassword(password);
@@ -31,7 +24,7 @@ export const authService = {
     `;
 
     const result = await query(insertQuery, [
-      military_number,
+      militaryNumber,
       username,
       name,
       passwordHash,

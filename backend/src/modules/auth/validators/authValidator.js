@@ -35,13 +35,6 @@ export const validateSignup = [
       return true;
     }),
 
-  body('military_number')
-    .trim()
-    .isLength({ min: 7, max: 50 })
-    .withMessage('군번은 7-50자이어야 합니다.')
-    .matches(/^[0-9-]+$/)
-    .withMessage('군번은 숫자와 하이픈만 사용할 수 있습니다.'),
-
   body('name')
     .trim()
     .isLength({ min: 2, max: 50 })
@@ -70,8 +63,8 @@ export const validatePasswordReset = [
     .trim()
     .isLength({ min: 7, max: 50 })
     .withMessage('군번은 7-50자이어야 합니다.')
-    .matches(/^[0-9-]+$/)
-    .withMessage('군번은 숫자와 하이픈만 사용할 수 있습니다.'),
+    .matches(/^[A-Za-z0-9-]+$/)
+    .withMessage('군번은 영문/숫자/하이픈만 사용할 수 있습니다.'),
 
   body('username')
     .trim()

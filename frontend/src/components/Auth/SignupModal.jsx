@@ -6,7 +6,6 @@ import { Button, Input, Modal } from "../Common";
 const SignupModal = ({ open, onClose, onSuccess }) => {
   const [form, setForm] = useState({
     loginId: "",
-    militaryNumber: "",
     name: "",
     email: "",
     password: "",
@@ -26,18 +25,12 @@ const SignupModal = ({ open, onClose, onSuccess }) => {
   const validate = () => {
     if (
       !form.loginId ||
-      !form.militaryNumber ||
       !form.name ||
       !form.email ||
       !form.password ||
       !form.confirmPassword
     ) {
       setError("모든 필드를 입력해주세요.");
-      return false;
-    }
-
-    if (!/^[0-9-]{7,50}$/.test(form.militaryNumber.trim())) {
-      setError("군번은 7-50자의 숫자/하이픈 조합으로 입력해주세요.");
       return false;
     }
 
@@ -67,7 +60,6 @@ const SignupModal = ({ open, onClose, onSuccess }) => {
       setLoading(true);
       await signup({
         username: form.loginId.trim(),
-        military_number: form.militaryNumber.trim(),
         name: form.name.trim(),
         rank: null,
         email: form.email.trim(),
@@ -97,15 +89,6 @@ const SignupModal = ({ open, onClose, onSuccess }) => {
           label="아이디"
           placeholder="아이디를 입력하세요"
           value={form.loginId}
-          onChange={handleChange}
-          required
-        />
-        <Input
-          id="signupMilitary"
-          name="militaryNumber"
-          label="군번"
-          placeholder="예) 20-10393"
-          value={form.militaryNumber}
           onChange={handleChange}
           required
         />
