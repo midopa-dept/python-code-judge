@@ -46,8 +46,8 @@ const SignupModal = ({ open, onClose, onSuccess }) => {
       return false;
     }
 
-    if (form.password.length < 8) {
-      setError("비밀번호는 8자 이상이어야 합니다.");
+    if (form.password.length < 8 || form.password.length > 100) {
+      setError("비밀번호는 8-100자 사이여야 합니다.");
       return false;
     }
 
@@ -77,7 +77,10 @@ const SignupModal = ({ open, onClose, onSuccess }) => {
       if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
-      const message = err?.response?.data?.message || "회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.";
+      const message =
+        err?.response?.data?.errors?.[0]?.message ||
+        err?.response?.data?.message ||
+        "회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.";
       toast.showError(message);
       setError(message);
     } finally {
