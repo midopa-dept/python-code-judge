@@ -25,8 +25,8 @@ export const validateSignup = [
     .withMessage('아이디는 영문, 숫자, 밑줄만 사용할 수 있습니다.'),
 
   body('password')
-    .isLength({ min: 8, max: 50 })
-    .withMessage('비밀번호는 8-50자이어야 합니다.')
+    .isLength({ min: 8, max: 100 })
+    .withMessage('비밀번호는 8-100자이어야 합니다.')
     .custom((value) => {
       const validation = validatePasswordStrength(value);
       if (!validation.isValid) {
@@ -81,8 +81,8 @@ export const validatePasswordReset = [
     .withMessage('아이디를 입력해주세요.'),
 
   body('new_password')
-    .isLength({ min: 8, max: 50 })
-    .withMessage('비밀번호는 8-50자이어야 합니다.')
+    .isLength({ min: 8, max: 100 })
+    .withMessage('비밀번호는 8-100자이어야 합니다.')
     .custom((value) => {
       const validation = validatePasswordStrength(value);
       if (!validation.isValid) {
@@ -101,8 +101,8 @@ export const validatePasswordChange = [
     .withMessage('현재 비밀번호를 입력해주세요.'),
 
   body('new_password')
-    .isLength({ min: 8, max: 50 })
-    .withMessage('새 비밀번호는 8-50자이어야 합니다.')
+    .isLength({ min: 8, max: 100 })
+    .withMessage('새 비밀번호는 8-100자이어야 합니다.')
     .custom((value) => {
       const validation = validatePasswordStrength(value);
       if (!validation.isValid) {
