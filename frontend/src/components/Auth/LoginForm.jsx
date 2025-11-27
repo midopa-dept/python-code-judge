@@ -1,26 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { login } from '../../api/auth';
-import useToast from '../Notification/useToast';
-import { Button, Input } from '../Common';
+﻿import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { login } from "../../api/auth";
+import useToast from "../Notification/useToast";
+import { Button, Input } from "../Common";
 
 const tabOptions = [
-  { key: 'student', label: '학생' },
-  { key: 'admin', label: '관리자' }
+  { key: "student", label: "학생" },
+  { key: "admin", label: "관리자" },
 ];
 
 const LoginForm = ({ onSignupOpen, onPasswordResetOpen, onSuccess }) => {
-  const [activeTab, setActiveTab] = useState('student');
-  const [loginId, setLoginId] = useState('');
-  const [password, setPassword] = useState('');
+  const [activeTab, setActiveTab] = useState("student");
+  const [loginId, setLoginId] = useState("");
+  const [password, setPassword] = useState("");
   const [rememberId, setRememberId] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const toast = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const savedId = localStorage.getItem('loginId');
+    const savedId = localStorage.getItem("loginId");
     if (savedId) {
       setLoginId(savedId);
       setRememberId(true);
@@ -29,10 +29,10 @@ const LoginForm = ({ onSignupOpen, onPasswordResetOpen, onSuccess }) => {
 
   const validate = () => {
     if (!loginId.trim() || !password.trim()) {
-      setError('아이디와 비밀번호를 모두 입력해주세요.');
+      setError("아이디와 비밀번호를 모두 입력해주세요.");
       return false;
     }
-    setError('');
+    setError("");
     return true;
   };
 
@@ -44,16 +44,15 @@ const LoginForm = ({ onSignupOpen, onPasswordResetOpen, onSuccess }) => {
       setLoading(true);
       await login(loginId.trim(), password.trim(), activeTab);
       if (rememberId) {
-        localStorage.setItem('loginId', loginId.trim());
+        localStorage.setItem("loginId", loginId.trim());
       } else {
-        localStorage.removeItem('loginId');
+        localStorage.removeItem("loginId");
       }
-      toast.showSuccess('로그인에 성공했어요.');
+      toast.showSuccess("로그인에 성공했습니다.");
       if (onSuccess) onSuccess();
-      navigate('/');
+      navigate("/");
     } catch (err) {
-      const message =
-        err?.response?.data?.message || '로그인에 실패했습니다. 입력 정보를 확인해주세요.';
+      const message = err?.response?.data?.message || "로그인에 실패했습니다. 입력값을 확인해주세요.";
       toast.showError(message);
       setError(message);
     } finally {
@@ -72,7 +71,7 @@ const LoginForm = ({ onSignupOpen, onPasswordResetOpen, onSuccess }) => {
             aria-selected={activeTab === tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`w-1/2 py-2 rounded-md text-sm font-semibold transition-colors ${
-              activeTab === tab.key ? 'bg-white text-primary-700 shadow' : 'text-gray-600'
+              activeTab === tab.key ? "bg-white text-primary-700 shadow" : "text-gray-600"
             }`}
           >
             {tab.label}
@@ -117,14 +116,18 @@ const LoginForm = ({ onSignupOpen, onPasswordResetOpen, onSuccess }) => {
           </button>
         </div>
 
-        {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
+        {error && (
+          <p className="text-sm text-red-600" role="alert">
+            {error}
+          </p>
+        )}
 
         <Button type="submit" loading={loading} className="w-full">
           로그인
         </Button>
 
         <div className="text-center text-sm text-gray-600">
-          계정이 없으신가요?{' '}
+          계정이 없다면{' '}
           <button
             type="button"
             className="text-primary-600 font-semibold hover:underline"

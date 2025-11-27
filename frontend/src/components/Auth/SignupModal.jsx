@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
-import { signup } from '../../api/auth';
-import useToast from '../Notification/useToast';
-import { Button, Input, Modal } from '../Common';
+﻿import React, { useState } from "react";
+import { signup } from "../../api/auth";
+import useToast from "../Notification/useToast";
+import { Button, Input, Modal } from "../Common";
 
 const SignupModal = ({ open, onClose, onSuccess }) => {
   const [form, setForm] = useState({
-    loginId: '',
-    militaryNumber: '',
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
+    loginId: "",
+    militaryNumber: "",
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const toast = useToast();
 
@@ -32,22 +32,31 @@ const SignupModal = ({ open, onClose, onSuccess }) => {
       !form.password ||
       !form.confirmPassword
     ) {
-      setError('모든 필드를 입력해주세요.');
+      setError("모든 필드를 입력해주세요.");
       return false;
     }
+
+    if (!/^[A-Za-z0-9-]{5,20}$/.test(form.militaryNumber.trim())) {
+      setError("군번은 5-20자의 영문/숫자/하이픈 조합으로 입력해주세요.");
+      return false;
+    }
+
     if (!/\S+@\S+\.\S+/.test(form.email)) {
-      setError('올바른 이메일을 입력해주세요.');
+      setError("올바른 이메일 형식을 입력해주세요.");
       return false;
     }
+
     if (form.password.length < 8) {
-      setError('비밀번호는 8자 이상이어야 합니다.');
+      setError("비밀번호는 8자 이상이어야 합니다.");
       return false;
     }
+
     if (form.password !== form.confirmPassword) {
-      setError('비밀번호가 일치하지 않습니다.');
+      setError("비밀번호가 일치하지 않습니다.");
       return false;
     }
-    setError('');
+
+    setError("");
     return true;
   };
 
@@ -61,15 +70,14 @@ const SignupModal = ({ open, onClose, onSuccess }) => {
         military_number: form.militaryNumber.trim(),
         name: form.name.trim(),
         rank: null,
-        email: form.email.trim(), // 백엔드에서 사용하지 않아도 추후 확장 대비
-        password: form.password
+        email: form.email.trim(),
+        password: form.password,
       });
-      toast.showSuccess('회원가입이 완료되었습니다. 로그인 해주세요.');
+      toast.showSuccess("회원가입이 완료되었습니다. 로그인해주세요.");
       if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
-      const message =
-        err?.response?.data?.message || '회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.';
+      const message = err?.response?.data?.message || "회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.";
       toast.showError(message);
       setError(message);
     } finally {
@@ -93,7 +101,7 @@ const SignupModal = ({ open, onClose, onSuccess }) => {
           id="signupMilitary"
           name="militaryNumber"
           label="군번"
-          placeholder="군번을 입력하세요"
+          placeholder="예) 20-10393"
           value={form.militaryNumber}
           onChange={handleChange}
           required
@@ -138,7 +146,11 @@ const SignupModal = ({ open, onClose, onSuccess }) => {
           required
         />
 
-        {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
+        {error && (
+          <p className="text-sm text-red-600" role="alert">
+            {error}
+          </p>
+        )}
 
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="secondary" onClick={onClose}>
