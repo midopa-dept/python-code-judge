@@ -28,6 +28,8 @@ apiClient.interceptors.request.use(
   }
 );
 
+let isRedirectingToLogin = false;
+
 // 응답 인터셉터 - 토큰 만료 처리 등
 apiClient.interceptors.response.use(
   (response) => {
@@ -37,7 +39,12 @@ apiClient.interceptors.response.use(
     // 토큰 만료 시 처리
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('token');
-      window.location.href = '/login'; // 로그인 페이지로 리다이렉트
+      const currentPath = window.location.pathname;
+      const isOnLogin = currentPath.startsWith('/login');
+      if (!isOnLogin && !isRedirectingToLogin) {
+        isRedirectingToLogin = true;
+        window.location.href = '/login'; // 로그인 페이지로 리다이렉트
+      }
     }
     return Promise.reject(error);
   }
