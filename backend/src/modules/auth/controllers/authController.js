@@ -44,10 +44,9 @@ export const authController = {
   // POST /api/auth/reset-password - 비밀번호 찾기
   async resetPassword(req, res, next) {
     try {
-      const { military_number, username, new_password } = req.body;
+      const { username, new_password } = req.body;
 
       const result = await authService.resetPassword(
-        military_number,
         username,
         new_password
       );

@@ -101,16 +101,16 @@ export const authService = {
   },
 
   // 비밀번호 찾기(재설정)
-  async resetPassword(military_number, username, new_password) {
+  async resetPassword(username, new_password) {
     const userQuery = `
       SELECT id, login_id, name, account_status
       FROM users
-      WHERE military_id = $1 AND login_id = $2
+      WHERE login_id = $1
     `;
 
-    const result = await query(userQuery, [military_number, username]);
+    const result = await query(userQuery, [username]);
     if (result.rows.length === 0) {
-      throw new ValidationError('군번 또는 아이디가 올바르지 않습니다.');
+      throw new ValidationError('아이디가 올바르지 않습니다.');
     }
 
     const user = result.rows[0];

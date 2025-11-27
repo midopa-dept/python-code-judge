@@ -59,13 +59,6 @@ export const validateLogin = [
 
 // 비밀번호 찾기(재설정) 유효성 검증
 export const validatePasswordReset = [
-  body('military_number')
-    .trim()
-    .isLength({ min: 7, max: 50 })
-    .withMessage('군번은 7-50자이어야 합니다.')
-    .matches(/^[A-Za-z0-9-]+$/)
-    .withMessage('군번은 영문/숫자/하이픈만 사용할 수 있습니다.'),
-
   body('username')
     .trim()
     .notEmpty()
