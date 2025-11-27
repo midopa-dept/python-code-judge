@@ -8,7 +8,6 @@ const SignupModal = ({ open, onClose, onSuccess }) => {
     loginId: '',
     militaryNumber: '',
     name: '',
-    rank: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -29,7 +28,6 @@ const SignupModal = ({ open, onClose, onSuccess }) => {
       !form.loginId ||
       !form.militaryNumber ||
       !form.name ||
-      !form.rank ||
       !form.email ||
       !form.password ||
       !form.confirmPassword
@@ -62,7 +60,7 @@ const SignupModal = ({ open, onClose, onSuccess }) => {
         username: form.loginId.trim(),
         military_number: form.militaryNumber.trim(),
         name: form.name.trim(),
-        rank: form.rank,
+        rank: null,
         email: form.email.trim(), // 백엔드에서 사용하지 않아도 추후 확장 대비
         password: form.password
       });
@@ -109,26 +107,6 @@ const SignupModal = ({ open, onClose, onSuccess }) => {
           onChange={handleChange}
           required
         />
-        <div className="w-full">
-          <label htmlFor="signupRank" className="block text-sm font-medium text-gray-700 mb-1">
-            계급 <span className="text-red-500">*</span>
-          </label>
-          <select
-            id="signupRank"
-            name="rank"
-            value={form.rank}
-            onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent border-gray-300"
-          >
-            <option value="">계급을 선택하세요</option>
-            <option value="이병">이병</option>
-            <option value="일병">일병</option>
-            <option value="상병">상병</option>
-            <option value="병장">병장</option>
-            <option value="하사">하사</option>
-          </select>
-        </div>
         <Input
           id="signupEmail"
           name="email"
