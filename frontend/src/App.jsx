@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import HealthCheckPage from './pages/HealthCheckPage';
+import ComponentsDemoPage from './pages/ComponentsDemoPage';
 
 function App() {
   return (
@@ -7,7 +8,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HealthCheckPage />} />
         <Route path="/health" element={<HealthCheckPage />} />
-        {/* 추가적인 라우트는 여기에 추가 */}
+        <Route path="/components" element={<ComponentsDemoPage />} />
       </Routes>
     </div>
   );
