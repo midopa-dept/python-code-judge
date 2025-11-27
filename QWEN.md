@@ -55,7 +55,7 @@ Python Code Judge는 온라인 Python 알고리즘 코딩 테스트를 위한 �
 ├── database/           # 데이터베이스 마이그레이션 및 스키마 파일
 ├── docs/              # 문서 파일 (요구사항, ERD, 와이어프레임 등)
 ├── swagger/           # API 명세 파일
-├── mockup/            # UI/UX 모ック업 파일
+├── mockup/            # UI/UX 목업 파일
 ├── .env.example       # 예시 환경 변수
 ├── SETUP-GUIDE.md     # 설치 안내
 ```
