@@ -36,8 +36,8 @@ const SignupModal = ({ open, onClose, onSuccess }) => {
       return false;
     }
 
-    if (!/^[A-Za-z0-9-]{5,20}$/.test(form.militaryNumber.trim())) {
-      setError("군번은 5-20자의 영문/숫자/하이픈 조합으로 입력해주세요.");
+    if (!/^[0-9-]{7,50}$/.test(form.militaryNumber.trim())) {
+      setError("군번은 7-50자의 숫자/하이픈 조합으로 입력해주세요.");
       return false;
     }
 
