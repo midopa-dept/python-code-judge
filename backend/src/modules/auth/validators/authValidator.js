@@ -47,12 +47,6 @@ export const validateSignup = [
     .isLength({ min: 2, max: 50 })
     .withMessage('이름은 2-50자이어야 합니다.'),
 
-  body('rank')
-    .optional({ checkFalsy: true })
-    .trim()
-    .isLength({ max: 50 })
-    .withMessage('계급은 50자 이하로 입력해주세요.'),
-
   handleValidationErrors,
 ];
 
