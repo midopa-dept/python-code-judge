@@ -6,7 +6,10 @@ import ProblemListPage from './pages/student/ProblemListPage';
 import ProblemDetailPage from './pages/student/ProblemDetailPage';
 import SubmissionsPage from './pages/student/SubmissionsPage';
 import ScoreboardPage from './pages/student/ScoreboardPage';
-import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import AdminHomePage from './pages/admin/AdminHomePage';
+import ProblemCreatePage from './pages/admin/ProblemCreatePage';
+import ProblemEditPage from './pages/admin/ProblemEditPage';
+import SessionManagePage from './pages/admin/SessionManagePage';
 import ProtectedRoute from './components/Common/ProtectedRoute';
 
 function App() {
@@ -17,7 +20,6 @@ function App() {
         <Route path="/health" element={<HealthCheckPage />} />
         <Route path="/components" element={<ComponentsDemoPage />} />
 
-        {/* 학생 페이지 */}
         <Route
           path="/student"
           element={
@@ -50,11 +52,44 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/admin"
           element={
             <ProtectedRoute allowedRoles={['admin', 'super_admin']}>
-              <AdminDashboardPage />
+              <AdminHomePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/problems/new"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'super_admin']}>
+              <ProblemCreatePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/problems"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'super_admin']}>
+              <ProblemEditPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/problems/:id/edit"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'super_admin']}>
+              <ProblemEditPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/sessions"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'super_admin']}>
+              <SessionManagePage />
             </ProtectedRoute>
           }
         />

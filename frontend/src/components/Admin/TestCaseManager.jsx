@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Input, Textarea } from '../Common';
 
-const TestCaseManager = ({ problemId, testCases = [], onAdd, loading }) => {
+const TestCaseManager = ({ problemId, testCases = [], onAdd, onUpdate, onDelete, loading }) => {
   const [form, setForm] = useState({
     inputData: '',
     expectedOutput: '',
@@ -53,16 +53,12 @@ const TestCaseManager = ({ problemId, testCases = [], onAdd, loading }) => {
                 {tc.isPublic ? '공개' : '비공개'}
               </span>
             </div>
-            <div>
-              <p className="font-medium text-gray-700 mb-1">입력</p>
-              <pre className="whitespace-pre-wrap bg-white border border-gray-200 rounded p-2">{tc.inputData}</pre>
-            </div>
-            <div>
-              <p className="font-medium text-gray-700 mb-1">출력</p>
-              <pre className="whitespace-pre-wrap bg-white border border-gray-200 rounded p-2">
-                {tc.expectedOutput}
-              </pre>
-            </div>
+            <EditableCase
+              testCase={tc}
+              onUpdate={(payload) => onUpdate?.(tc, payload)}
+              onDelete={() => onDelete?.(tc)}
+              loading={loading}
+            />
           </div>
         ))}
       </div>
@@ -70,15 +66,17 @@ const TestCaseManager = ({ problemId, testCases = [], onAdd, loading }) => {
       <form className="space-y-3" onSubmit={handleSubmit}>
         <Textarea
           label="입력"
+          id="inputData"
           name="inputData"
           value={form.inputData}
           onChange={handleChange}
-          placeholder="입력을 작성하세요"
+          placeholder="입력 값을 작성하세요"
           rows={3}
           required
         />
         <Textarea
           label="출력"
+          id="expectedOutput"
           name="expectedOutput"
           value={form.expectedOutput}
           onChange={handleChange}
@@ -88,7 +86,8 @@ const TestCaseManager = ({ problemId, testCases = [], onAdd, loading }) => {
         />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
           <Input
-            label="노출 순서"
+            label="출력 순서"
+            id="order"
             name="order"
             type="number"
             value={form.order}
@@ -104,6 +103,103 @@ const TestCaseManager = ({ problemId, testCases = [], onAdd, loading }) => {
           </Button>
         </div>
       </form>
+    </div>
+  );
+};
+
+const EditableCase = ({ testCase, onUpdate, onDelete, loading }) => {
+  const [edit, setEdit] = useState(false);
+  const [draft, setDraft] = useState({
+    inputData: testCase.inputData,
+    expectedOutput: testCase.expectedOutput,
+    isPublic: testCase.isPublic,
+    order: testCase.order,
+  });
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setDraft((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+  };
+
+  const handleSave = () => {
+    onUpdate?.({
+      inputData: draft.inputData,
+      expectedOutput: draft.expectedOutput,
+      isPublic: draft.isPublic,
+      order: Number(draft.order) || 0,
+    });
+    setEdit(false);
+  };
+
+  if (!edit) {
+    return (
+      <div className="space-y-2">
+        <div>
+          <p className="font-medium text-gray-700 mb-1">입력</p>
+          <pre className="whitespace-pre-wrap bg-white border border-gray-200 rounded p-2">{testCase.inputData}</pre>
+        </div>
+        <div>
+          <p className="font-medium text-gray-700 mb-1">출력</p>
+          <pre className="whitespace-pre-wrap bg-white border border-gray-200 rounded p-2">
+            {testCase.expectedOutput}
+          </pre>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={() => setEdit(true)}>
+            수정
+          </Button>
+          <Button variant="danger" size="sm" onClick={onDelete} disabled={loading}>
+            삭제
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <Textarea
+        label="입력"
+        id={`edit-input-${testCase.id}`}
+        name="inputData"
+        value={draft.inputData}
+        onChange={handleChange}
+        rows={3}
+      />
+      <Textarea
+        label="출력"
+        id={`edit-output-${testCase.id}`}
+        name="expectedOutput"
+        value={draft.expectedOutput}
+        onChange={handleChange}
+        rows={3}
+      />
+      <div className="flex items-center gap-3 text-sm text-gray-700">
+        <label className="flex items-center gap-2">
+          <input type="checkbox" name="isPublic" checked={draft.isPublic} onChange={handleChange} />
+          공개
+        </label>
+        <Input
+          label="순서"
+          id={`order-${testCase.id}`}
+          name="order"
+          type="number"
+          value={draft.order}
+          onChange={handleChange}
+          className="w-24"
+        />
+      </div>
+      <div className="flex items-center gap-2">
+        <Button size="sm" onClick={handleSave} disabled={loading}>
+          저장
+        </Button>
+        <Button variant="secondary" size="sm" onClick={() => setEdit(false)}>
+          취소
+        </Button>
+      </div>
     </div>
   );
 };

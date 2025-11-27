@@ -69,6 +69,7 @@ export const problemController = {
         difficulty,
         timeLimit,
         memoryLimit,
+        score,
         visibility,
         judgeConfig,
       } = req.body;
@@ -106,6 +107,7 @@ export const problemController = {
           difficulty,
           timeLimit,
           memoryLimit,
+          score,
           visibility,
           judgeConfig,
         },
@@ -134,6 +136,7 @@ export const problemController = {
         difficulty,
         timeLimit,
         memoryLimit,
+        score,
         visibility,
         judgeConfig,
       } = req.body;
@@ -165,6 +168,7 @@ export const problemController = {
         difficulty,
         timeLimit,
         memoryLimit,
+        score,
         visibility,
         judgeConfig,
       });

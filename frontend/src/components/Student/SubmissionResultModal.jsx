@@ -16,9 +16,7 @@ const SubmissionResultModal = ({ open, onClose, result }) => {
     <Modal isOpen={open} onClose={onClose} title="채점 결과 상세" size="md">
       <div className="space-y-3">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-gray-900">
-            제출 #{result.id || result.submissionId}
-          </span>
+          <span className="text-sm font-semibold text-gray-900">제출 #{result.id || result.submissionId}</span>
           <span className="text-xs bg-primary-50 text-primary-700 px-2 py-1 rounded-full">
             {result.status || result.result}
           </span>

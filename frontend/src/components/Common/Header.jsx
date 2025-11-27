@@ -35,6 +35,13 @@ const Header = () => {
     }
   };
 
+  const homePath =
+    currentUser?.role === "admin" || currentUser?.role === "super_admin"
+      ? "/admin"
+      : currentUser
+        ? "/student"
+        : "/login";
+
   if (loading) {
     return (
       <header className="bg-white shadow-sm">
@@ -57,7 +64,7 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <Link to="/student" className="text-xl font-bold text-primary-600">
+            <Link to={homePath} className="text-xl font-bold text-primary-600">
               Python Judge
             </Link>
           </div>
@@ -107,7 +114,7 @@ const Header = () => {
                   <span className="font-medium">{currentUser.name}</span>
                   {currentUser.role && (
                     <span className="ml-1 text-xs bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full">
-                      {currentUser.role === "admin" ? "관리자" : "학생"}
+                      {currentUser.role === "super_admin" ? "슈퍼관리자" : currentUser.role === "admin" ? "관리자" : "학생"}
                     </span>
                   )}
                 </div>

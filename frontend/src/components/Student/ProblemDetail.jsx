@@ -20,7 +20,7 @@ const ProblemDetail = ({
 }) => {
   return (
     <Card
-      title="문제 상세 · 코드 편집기"
+      title="문제 상세 · 코드 작성"
       headerActions={
         <div className="flex items-center gap-2">
           <Select
@@ -28,6 +28,7 @@ const ProblemDetail = ({
             options={pythonOptions}
             value={pythonVersion}
             onChange={(e) => onPythonVersionChange(e.target.value)}
+            aria-label="파이썬 버전 선택"
           />
           <Button onClick={onSubmit} loading={submitting} aria-label="코드 제출">
             코드 제출
@@ -59,7 +60,7 @@ const ProblemDetail = ({
           <p className="text-gray-700 whitespace-pre-line">{problem.description || '설명이 없습니다.'}</p>
           {problem.samples && problem.samples.length > 0 && (
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-gray-800">샘플 입출력</p>
+              <p className="text-sm font-semibold text-gray-800">예제 입출력</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {problem.samples.map((sample, index) => (
                   <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm">
@@ -80,7 +81,7 @@ const ProblemDetail = ({
           <div>
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-semibold text-gray-800">코드 입력</p>
-              <p className="text-xs text-gray-500">Ctrl+Enter 또는 Cmd+Enter 로 제출 가능합니다.</p>
+              <p className="text-xs text-gray-500">Ctrl+Enter 또는 Cmd+Enter 로 제출할 수 있습니다.</p>
             </div>
             <textarea
               value={code}

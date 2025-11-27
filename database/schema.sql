@@ -1,5 +1,5 @@
--- Unified Schema for Python Judge
--- 통합된 users 테이블 사용
+﻿-- Unified Schema for Python Judge
+-- ?듯빀??users ?뚯씠釉??ъ슜
 
 BEGIN;
 
@@ -19,7 +19,7 @@ DROP TABLE IF EXISTS administrators CASCADE;
 DROP TABLE IF EXISTS students CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
--- 1) 통합 사용자 테이블
+-- 1) ?듯빀 ?ъ슜???뚯씠釉?
 CREATE TABLE users (
     id               BIGSERIAL PRIMARY KEY,
     login_id         VARCHAR NOT NULL UNIQUE CHECK (char_length(login_id) BETWEEN 4 AND 20),
@@ -34,7 +34,7 @@ CREATE TABLE users (
     updated_at       TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- 2) 교육 세션
+-- 2) 援먯쑁 ?몄뀡
 CREATE TABLE education_sessions (
     id              BIGSERIAL PRIMARY KEY,
     name            VARCHAR(100) NOT NULL,
@@ -49,7 +49,7 @@ CREATE TABLE education_sessions (
     CONSTRAINT chk_education_sessions_time CHECK (end_time > start_time)
 );
 
--- 3) 문제
+-- 3) 臾몄젣
 CREATE TABLE problems (
     id                BIGSERIAL PRIMARY KEY,
     title             VARCHAR NOT NULL UNIQUE,
@@ -66,7 +66,7 @@ CREATE TABLE problems (
     updated_at        TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- 4) 테스트 케이스
+-- 4) ?뚯뒪??耳?댁뒪
 CREATE TABLE test_cases (
     id              BIGSERIAL PRIMARY KEY,
     problem_id      BIGINT NOT NULL REFERENCES problems(id) ON DELETE CASCADE,
@@ -78,7 +78,7 @@ CREATE TABLE test_cases (
     updated_at      TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- 5) 제출
+-- 5) ?쒖텧
 CREATE TABLE submissions (
     id              BIGSERIAL PRIMARY KEY,
     student_id      BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
@@ -97,7 +97,7 @@ CREATE TABLE submissions (
     judged_at       TIMESTAMP
 );
 
--- 6) 세션-학생 매핑
+-- 6) ?몄뀡-?숈깮 留ㅽ븨
 CREATE TABLE session_students (
     session_id  BIGINT NOT NULL REFERENCES education_sessions(id) ON DELETE CASCADE,
     student_id  BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -105,7 +105,7 @@ CREATE TABLE session_students (
     PRIMARY KEY (session_id, student_id)
 );
 
--- 7) 세션-문제 매핑
+-- 7) ?몄뀡-臾몄젣 留ㅽ븨
 CREATE TABLE session_problems (
     session_id  BIGINT NOT NULL REFERENCES education_sessions(id) ON DELETE CASCADE,
     problem_id  BIGINT NOT NULL REFERENCES problems(id) ON DELETE CASCADE,
@@ -113,7 +113,7 @@ CREATE TABLE session_problems (
     PRIMARY KEY (session_id, problem_id)
 );
 
--- 8) 스코어보드
+-- 8) ?ㅼ퐫?대낫??
 CREATE TABLE scoreboards (
     session_id    BIGINT NOT NULL REFERENCES education_sessions(id) ON DELETE CASCADE,
     student_id    BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -124,7 +124,7 @@ CREATE TABLE scoreboards (
     PRIMARY KEY (session_id, student_id)
 );
 
--- 9) 감사 로그
+-- 9) 媛먯궗 濡쒓렇
 CREATE TABLE audit_logs (
     id               BIGSERIAL PRIMARY KEY,
     user_id          BIGINT,
@@ -138,7 +138,7 @@ CREATE TABLE audit_logs (
     error_message    TEXT
 );
 
--- 인덱스
+-- ?몃뜳??
 CREATE INDEX idx_users_role ON users(role);
 CREATE INDEX idx_users_account_status ON users(account_status);
 CREATE INDEX idx_users_login_id ON users(login_id);
@@ -168,10 +168,10 @@ CREATE INDEX idx_audit_logs_user_id ON audit_logs(user_id);
 CREATE INDEX idx_audit_logs_performed_at ON audit_logs(performed_at DESC);
 CREATE INDEX idx_audit_logs_action_type ON audit_logs(action_type);
 
--- 세션별 학생 제출 이력 조회 최적화 (추가)
+-- ?몄뀡蹂??숈깮 ?쒖텧 ?대젰 議고쉶 理쒖쟻??(異붽?)
 CREATE INDEX idx_submissions_session_student ON submissions(session_id, student_id, submitted_at DESC);
 
--- 트리거 함수
+-- ?몃━嫄??⑥닔
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -180,7 +180,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 트리거
+-- ?몃━嫄?
 CREATE TRIGGER trg_users_updated_at
 BEFORE UPDATE ON users
 FOR EACH ROW EXECUTE FUNCTION set_updated_at();
@@ -198,3 +198,4 @@ BEFORE UPDATE ON education_sessions
 FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 COMMIT;
+

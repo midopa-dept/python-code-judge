@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import StudentPage from '../pages/StudentPage';
@@ -28,7 +28,7 @@ const apiMocks = vi.hoisted(() => ({
 vi.mock('../api/student', () => apiMocks);
 
 vi.mock('../api/auth', () => ({
-  getCurrentUser: () => Promise.resolve({ name: '테스터', role: 'student' }),
+  getCurrentUser: () => Promise.resolve({ name: '학생', role: 'student' }),
   logout: vi.fn(),
 }));
 
@@ -46,9 +46,9 @@ const sampleProblem = {
   title: '문제 1',
   category: 'dp',
   difficulty: 3,
-  summary: '요약',
+  summary: '간단한 예시',
   description: '이것은 문제 설명입니다.',
-  initialCode: '# 시작 코드',
+  initialCode: '# 초기 코드',
   samples: [{ input: '1', output: '1' }],
   activeSessionId: 's1',
 };
@@ -81,7 +81,7 @@ describe('StudentPage', () => {
     expect(screen.getByRole('textbox', { name: '코드 에디터' })).toBeInTheDocument();
   });
 
-  it('검색어를 변경하면 문제 목록을 다시 불러온다', async () => {
+  it('검색어가 변경되면 문제 목록을 다시 불러온다', async () => {
     const user = userEvent.setup();
     renderStudentPage();
     await screen.findAllByText('문제 1');
@@ -92,7 +92,7 @@ describe('StudentPage', () => {
     await waitFor(() => expect(apiMocks.getProblems.mock.calls.length).toBeGreaterThanOrEqual(2));
   });
 
-  it('코드를 제출하면 토스트와 결과 모달을 띄우고 이력을 새로고침한다', async () => {
+  it('코드를 제출하면 토스트와 결과 모달을 띄우고 이력을 새로 불러온다', async () => {
     const user = userEvent.setup();
     renderStudentPage();
     await screen.findAllByText('문제 1');
@@ -112,7 +112,7 @@ describe('StudentPage', () => {
     expect(apiMocks.getSubmissions).toHaveBeenCalledTimes(2);
   });
 
-  it('제출 이력을 클릭하면 상세 결과를 불러온다', async () => {
+  it('제출 이력을 클릭하면 결과를 불러온다', async () => {
     renderStudentPage();
     const historyItem = await screen.findByText(/제출 ID/);
     historyItem.click();
@@ -121,7 +121,7 @@ describe('StudentPage', () => {
     expect(await screen.findByRole('dialog', { name: '채점 결과 상세' })).toBeInTheDocument();
   });
 
-  it('스코어보드는 세션 ID로 폴링한다', async () => {
+  it('스코어보드는 문제의 activeSessionId로 갱신한다', async () => {
     renderStudentPage();
     await screen.findAllByText('문제 1');
 

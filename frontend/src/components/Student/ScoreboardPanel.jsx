@@ -1,16 +1,10 @@
 import React from 'react';
 import { Card, Button, Input } from '../Common';
 
-const ScoreboardPanel = ({
-  sessionId,
-  onSessionChange,
-  scoreboard,
-  loading,
-  onRefresh,
-}) => {
+const ScoreboardPanel = ({ sessionId, onSessionChange, scoreboard, loading, onRefresh }) => {
   return (
     <Card
-      title="실시간 스코어보드"
+      title="스코어보드"
       headerActions={
         <div className="flex items-center gap-2">
           <Input
@@ -38,19 +32,15 @@ const ScoreboardPanel = ({
               className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-2"
             >
               <div className="flex items-center gap-3">
-                <span className="text-sm font-semibold text-gray-800">
-                  {row.rank ?? index + 1}위
-                </span>
+                <span className="text-sm font-semibold text-gray-800">{row.rank ?? index + 1}위</span>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">{row.studentName || '학생'}</p>
+                  <p className="text-sm font-semibold text-gray-900">{row.studentName || '이름 미정'}</p>
                   <p className="text-xs text-gray-600">
-                    맞힌 문제 {row.acceptedCount ?? 0} · 총 제출 {row.submissionCount ?? 0}
+                    맞힌 문제 {row.acceptedCount ?? 0} · 제출 {row.submissionCount ?? 0}
                   </p>
                 </div>
               </div>
-              <div className="text-sm font-semibold text-primary-700">
-                점수 {row.score ?? row.totalScore ?? 0}
-              </div>
+              <div className="text-sm font-semibold text-primary-700">점수 {row.score ?? row.totalScore ?? 0}</div>
             </div>
           ))}
       </div>

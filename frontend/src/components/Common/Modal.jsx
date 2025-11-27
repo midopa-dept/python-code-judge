@@ -8,19 +8,27 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
     sm: 'max-w-sm',
     md: 'max-w-md',
     lg: 'max-w-lg',
-    xl: 'max-w-xl'
+    xl: 'max-w-xl',
   };
 
   const modalContent = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby={title ? 'modal-title' : undefined}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={title ? 'modal-title' : undefined}
+    >
+      <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={onClose} />
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-        onClick={onClose}
-      />
-      <div className={`relative bg-white rounded-lg shadow-xl overflow-hidden transform transition-all ${sizeClasses[size]} w-full`}>
+        className={`relative bg-white rounded-lg shadow-xl overflow-hidden transform transition-all ${sizeClasses[size]} w-full`}
+      >
         {(title || onClose) && (
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
-            {title && <h3 id="modal-title" className="text-lg font-semibold text-gray-900">{title}</h3>}
+            {title && (
+              <h3 id="modal-title" className="text-lg font-semibold text-gray-900">
+                {title}
+              </h3>
+            )}
             {onClose && (
               <button
                 onClick={onClose}
@@ -34,9 +42,7 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
             )}
           </div>
         )}
-        <div className="p-4">
-          {children}
-        </div>
+        <div className="p-4">{children}</div>
       </div>
     </div>
   );

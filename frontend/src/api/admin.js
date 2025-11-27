@@ -1,6 +1,6 @@
 import apiClient from './axiosConfig';
 
-// 문제 API
+// 문제 관리 API
 export const fetchProblems = async () => {
   const res = await apiClient.get('/problems');
   return res.data.data || res.data;
@@ -31,7 +31,22 @@ export const addTestCase = async (problemId, payload) => {
   return res.data.data || res.data;
 };
 
-// 세션 API
+export const fetchTestCases = async (problemId) => {
+  const res = await apiClient.get(`/problems/${problemId}/test-cases`);
+  return res.data.data?.testCases || res.data.testCases || res.data.data || res.data;
+};
+
+export const updateTestCase = async (problemId, testCaseId, payload) => {
+  const res = await apiClient.put(`/problems/${problemId}/test-cases/${testCaseId}`, payload);
+  return res.data.data || res.data;
+};
+
+export const deleteTestCase = async (problemId, testCaseId) => {
+  const res = await apiClient.delete(`/problems/${problemId}/test-cases/${testCaseId}`);
+  return res.data.data || res.data;
+};
+
+// 세션 관리 API
 export const fetchSessions = async () => {
   const res = await apiClient.get('/sessions');
   return res.data.data || res.data;
@@ -65,10 +80,13 @@ export const assignStudents = async (sessionId, studentIds) => {
 export default {
   fetchProblems,
   fetchProblemDetail,
+  fetchTestCases,
   createProblem,
   updateProblem,
   deleteProblem,
   addTestCase,
+  updateTestCase,
+  deleteTestCase,
   fetchSessions,
   createSession,
   updateSessionStatus,

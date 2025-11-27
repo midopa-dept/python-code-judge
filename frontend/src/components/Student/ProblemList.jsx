@@ -3,10 +3,17 @@ import { Card, Input, Select, Button } from '../Common';
 
 const categoryOptions = [
   { value: '', label: '전체' },
-  { value: 'math', label: '수학' },
-  { value: 'string', label: '문자열' },
-  { value: 'graph', label: '그래프' },
-  { value: 'dp', label: 'DP' },
+  { value: '입출력', label: '입출력' },
+  { value: '조건문', label: '조건문' },
+  { value: '반복문', label: '반복문' },
+  { value: '리스트', label: '리스트' },
+  { value: '문자열', label: '문자열' },
+  { value: '함수', label: '함수' },
+  { value: '재귀', label: '재귀' },
+  { value: '정렬', label: '정렬' },
+  { value: '탐색', label: '탐색' },
+  { value: '동적계획법', label: '동적계획법' },
+  { value: '기타', label: '기타' },
 ];
 
 const difficultyOptions = [
@@ -42,7 +49,7 @@ const ProblemList = ({
         <Input
           label="검색"
           id="search"
-          placeholder="문제 제목 또는 태그 검색"
+          placeholder="문제 제목 또는 태그를 검색하세요"
           value={filters.search}
           onChange={(e) => onFilterChange({ ...filters, search: e.target.value })}
           className="col-span-1 md:col-span-3"

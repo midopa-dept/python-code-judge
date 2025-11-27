@@ -73,6 +73,7 @@ const ProblemForm = ({ initialData, onSubmit, submitting }) => {
     <form className="space-y-4" onSubmit={handleSubmit}>
       <Input
         label="제목"
+        id="title"
         name="title"
         value={form.title}
         onChange={handleChange}
@@ -81,10 +82,11 @@ const ProblemForm = ({ initialData, onSubmit, submitting }) => {
       />
       <Textarea
         label="문제 설명"
+        id="description"
         name="description"
         value={form.description}
         onChange={handleChange}
-        placeholder="문제 설명을 작성하세요 (마크다운 가능)"
+        placeholder="문제 설명을 입력하세요 (마크다운 지원)"
         rows={4}
         required
       />
@@ -124,6 +126,7 @@ const ProblemForm = ({ initialData, onSubmit, submitting }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Input
           label="시간 제한 (초)"
+          id="time_limit"
           name="time_limit"
           type="number"
           min={1}
@@ -133,6 +136,7 @@ const ProblemForm = ({ initialData, onSubmit, submitting }) => {
         />
         <Input
           label="메모리 제한 (MB)"
+          id="memory_limit"
           name="memory_limit"
           type="number"
           min={64}
@@ -141,7 +145,8 @@ const ProblemForm = ({ initialData, onSubmit, submitting }) => {
           onChange={handleChange}
         />
         <Input
-          label="점수"
+          label="배점"
+          id="score"
           name="score"
           type="number"
           min={1}

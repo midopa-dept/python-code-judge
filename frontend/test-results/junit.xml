@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="21" failures="0" errors="0" time="4.291946">
+    <testsuite name="src/__tests__/AdminPages.test.jsx" timestamp="2025-11-27T07:55:57.630Z" hostname="M30119" tests="3" failures="0" errors="0" skipped="0" time="1.0763079">
+        <testcase classname="src/__tests__/AdminPages.test.jsx" name="AdminHomePage &gt; 관리자 주요 링크를 보여준다" time="0.1649536">
+            <system-err>
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/__tests__/AdminPages.test.jsx" name="ProblemForm &gt; 입력 값을 기반으로 payload를 제출한다" time="0.4513275">
+        </testcase>
+        <testcase classname="src/__tests__/AdminPages.test.jsx" name="TestCaseManager &gt; 테스트 케이스 추가/수정/삭제 동작을 호출한다" time="0.4586545">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/__tests__/LoadingSpinner.test.jsx" timestamp="2025-11-27T07:55:57.631Z" hostname="M30119" tests="2" failures="0" errors="0" skipped="0" time="0.0989549">
+        <testcase classname="src/__tests__/LoadingSpinner.test.jsx" name="LoadingSpinner &gt; 기본 상태로 렌더링되며 접근성 속성을 포함한다" time="0.0899122">
+        </testcase>
+        <testcase classname="src/__tests__/LoadingSpinner.test.jsx" name="LoadingSpinner &gt; 사이즈 prop에 따라 클래스가 적용된다" time="0.0079278">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/__tests__/LoginPage.test.jsx" timestamp="2025-11-27T07:55:57.632Z" hostname="M30119" tests="7" failures="0" errors="0" skipped="0" time="2.0446236">
+        <testcase classname="src/__tests__/LoginPage.test.jsx" name="LoginPage &gt; 학생/관리자 탭과 입력 필드를 렌더링한다" time="0.1244147">
+            <system-err>
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/__tests__/LoginPage.test.jsx" name="LoginPage &gt; 탭을 전환하면 선택 상태가 변경된다" time="0.0676754">
+        </testcase>
+        <testcase classname="src/__tests__/LoginPage.test.jsx" name="LoginPage &gt; 빈 제출 시 오류 메시지를 보여준다" time="0.0182151">
+        </testcase>
+        <testcase classname="src/__tests__/LoginPage.test.jsx" name="LoginPage &gt; 로그인 성공 시 토큰 저장 및 리다이렉트를 수행한다" time="0.399098">
+            <system-err>
+No routes matched location &quot;/student&quot; 
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/__tests__/LoginPage.test.jsx" name="LoginPage &gt; 로그인 실패 시 오류 메시지를 보여준다" time="0.3007474">
+        </testcase>
+        <testcase classname="src/__tests__/LoginPage.test.jsx" name="LoginPage &gt; 회원가입 모달에서 성공적으로 제출한다" time="0.7983317">
+        </testcase>
+        <testcase classname="src/__tests__/LoginPage.test.jsx" name="LoginPage &gt; 비밀번호 찾기 모달에서 이메일 전송을 시도한다" time="0.3349664">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/__tests__/Modal.test.jsx" timestamp="2025-11-27T07:55:57.633Z" hostname="M30119" tests="3" failures="0" errors="0" skipped="0" time="0.2093307">
+        <testcase classname="src/__tests__/Modal.test.jsx" name="Modal &gt; 닫혀 있을 때는 렌더링되지 않는다" time="0.008223">
+        </testcase>
+        <testcase classname="src/__tests__/Modal.test.jsx" name="Modal &gt; 열렸을 때 제목과 접근성 속성을 제공한다" time="0.0941123">
+        </testcase>
+        <testcase classname="src/__tests__/Modal.test.jsx" name="Modal &gt; 오버레이와 닫기 버튼으로 onClose를 호출한다" time="0.1057599">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/__tests__/StudentPage.test.jsx" timestamp="2025-11-27T07:55:57.634Z" hostname="M30119" tests="5" failures="0" errors="0" skipped="0" time="0.7467872">
+        <testcase classname="src/__tests__/StudentPage.test.jsx" name="StudentPage &gt; 초기 로드 시 문제 목록과 상세를 보여준다" time="0.175676">
+            <system-err>
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/__tests__/StudentPage.test.jsx" name="StudentPage &gt; 검색어가 변경되면 문제 목록을 다시 불러온다" time="0.1370454">
+        </testcase>
+        <testcase classname="src/__tests__/StudentPage.test.jsx" name="StudentPage &gt; 코드를 제출하면 토스트와 결과 모달을 띄우고 이력을 새로 불러온다" time="0.3332113">
+        </testcase>
+        <testcase classname="src/__tests__/StudentPage.test.jsx" name="StudentPage &gt; 제출 이력을 클릭하면 결과를 불러온다" time="0.0333674">
+        </testcase>
+        <testcase classname="src/__tests__/StudentPage.test.jsx" name="StudentPage &gt; 스코어보드는 문제의 activeSessionId로 갱신한다" time="0.0662969">
+            <system-err>
+Warning: An update to StudentPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() =&gt; {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you&apos;re testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at StudentPage (C:/test/python-code-judge/frontend/src/pages/StudentPage.jsx:24:67)
+    at RenderedRoute (C:\test\python-code-judge\frontend\node_modules\react-router\dist\umd\react-router.development.js:539:7)
+    at Routes (C:\test\python-code-judge\frontend\node_modules\react-router\dist\umd\react-router.development.js:1273:7)
+    at Router (C:\test\python-code-judge\frontend\node_modules\react-router\dist\umd\react-router.development.js:1207:17)
+    at MemoryRouter (C:\test\python-code-judge\frontend\node_modules\react-router\dist\umd\react-router.development.js:1101:7)
+
+            </system-err>
+        </testcase>
+    </testsuite>
+    <testsuite name="src/__tests__/Toast.test.jsx" timestamp="2025-11-27T07:55:57.635Z" hostname="M30119" tests="1" failures="0" errors="0" skipped="0" time="0.1159417">
+        <testcase classname="src/__tests__/Toast.test.jsx" name="Toast 알림 &gt; 성공 토스트를 표시한다" time="0.1141193">
+        </testcase>
+    </testsuite>
+</testsuites>
