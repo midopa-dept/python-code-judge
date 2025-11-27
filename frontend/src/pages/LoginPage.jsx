@@ -14,8 +14,7 @@ const LoginPage = () => {
       <main className="flex-1 flex items-center justify-center p-4">
         <Card className="w-full max-w-2xl">
           <div className="text-center mb-6">
-            <p className="text-sm font-semibold text-primary-700">Phase 4 · 인증</p>
-            <h1 className="text-3xl font-bold text-gray-900 mt-1">Python Judge 로그인</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Python Judge 로그인</h1>
             <p className="text-gray-600 mt-2">
               학생/관리자 탭을 선택해 로그인하거나, 새로운 계정을 생성하세요.
             </p>

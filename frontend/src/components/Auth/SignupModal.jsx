@@ -6,6 +6,9 @@ import { Button, Input, Modal } from '../Common';
 const SignupModal = ({ open, onClose, onSuccess }) => {
   const [form, setForm] = useState({
     loginId: '',
+    militaryNumber: '',
+    name: '',
+    rank: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -22,7 +25,15 @@ const SignupModal = ({ open, onClose, onSuccess }) => {
   };
 
   const validate = () => {
-    if (!form.loginId || !form.email || !form.password || !form.confirmPassword) {
+    if (
+      !form.loginId ||
+      !form.militaryNumber ||
+      !form.name ||
+      !form.rank ||
+      !form.email ||
+      !form.password ||
+      !form.confirmPassword
+    ) {
       setError('모든 필드를 입력해주세요.');
       return false;
     }
@@ -48,8 +59,11 @@ const SignupModal = ({ open, onClose, onSuccess }) => {
     try {
       setLoading(true);
       await signup({
-        loginId: form.loginId.trim(),
-        email: form.email.trim(),
+        username: form.loginId.trim(),
+        military_number: form.militaryNumber.trim(),
+        name: form.name.trim(),
+        rank: form.rank,
+        email: form.email.trim(), // 백엔드에서 사용하지 않아도 추후 확장 대비
         password: form.password
       });
       toast.showSuccess('회원가입이 완료되었습니다. 로그인 해주세요.');
@@ -77,6 +91,44 @@ const SignupModal = ({ open, onClose, onSuccess }) => {
           onChange={handleChange}
           required
         />
+        <Input
+          id="signupMilitary"
+          name="militaryNumber"
+          label="군번"
+          placeholder="군번을 입력하세요"
+          value={form.militaryNumber}
+          onChange={handleChange}
+          required
+        />
+        <Input
+          id="signupName"
+          name="name"
+          label="이름"
+          placeholder="이름을 입력하세요"
+          value={form.name}
+          onChange={handleChange}
+          required
+        />
+        <div className="w-full">
+          <label htmlFor="signupRank" className="block text-sm font-medium text-gray-700 mb-1">
+            계급 <span className="text-red-500">*</span>
+          </label>
+          <select
+            id="signupRank"
+            name="rank"
+            value={form.rank}
+            onChange={handleChange}
+            required
+            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent border-gray-300"
+          >
+            <option value="">계급을 선택하세요</option>
+            <option value="이병">이병</option>
+            <option value="일병">일병</option>
+            <option value="상병">상병</option>
+            <option value="병장">병장</option>
+            <option value="하사">하사</option>
+          </select>
+        </div>
         <Input
           id="signupEmail"
           name="email"

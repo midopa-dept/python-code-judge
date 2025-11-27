@@ -104,6 +104,9 @@ describe('LoginPage', () => {
     const modal = await screen.findByRole('dialog', { name: '회원가입' });
 
     await user.type(within(modal).getByPlaceholderText('아이디를 입력하세요'), 'newuser');
+    await user.type(within(modal).getByPlaceholderText('군번을 입력하세요'), '123456');
+    await user.type(within(modal).getByPlaceholderText('이름을 입력하세요'), '홍길동');
+    await user.selectOptions(within(modal).getByLabelText(/계급/), '이병');
     await user.type(within(modal).getByPlaceholderText('이메일을 입력하세요'), 'new@user.com');
     await user.type(within(modal).getByPlaceholderText('비밀번호를 입력하세요'), 'password123');
     await user.type(within(modal).getByPlaceholderText('비밀번호를 다시 입력하세요'), 'password123');
@@ -112,7 +115,10 @@ describe('LoginPage', () => {
 
     await waitFor(() => expect(mockSignup).toHaveBeenCalledTimes(1));
     expect(mockSignup).toHaveBeenCalledWith({
-      loginId: 'newuser',
+      username: 'newuser',
+      military_number: '123456',
+      name: '홍길동',
+      rank: '이병',
       email: 'new@user.com',
       password: 'password123',
     });
