@@ -109,13 +109,8 @@ const Header = () => {
                 </button>
               </div>
             ) : (
-              <div className="flex space-x-4">
-                <Link to="/login" className="text-sm text-gray-700 hover:text-primary-600 font-medium">
-                  로그인
-                </Link>
-                <Link to="/signup" className="text-sm text-gray-700 hover:text-primary-600 font-medium">
-                  회원가입
-                </Link>
+              <div className="flex items-center" aria-hidden>
+                {/* 비로그인 상태에서는 상단 액션을 노출하지 않습니다. */}
               </div>
             )}
           </div>
