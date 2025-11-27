@@ -87,7 +87,7 @@ CREATE TABLE submissions (
     code            TEXT NOT NULL,
     code_size       INTEGER NOT NULL CHECK (code_size <= 65536),
     submitted_at    TIMESTAMP NOT NULL DEFAULT NOW(),
-    status          VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','judging','AC','WA','TLE','RE','SE','MLE')),
+    status          VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','judging','AC','WA','TLE','RE','SE','MLE','cancelled')),
     python_version  VARCHAR(10) NOT NULL CHECK (python_version IN ('3.8','3.9','3.10','3.11','3.12')),
     execution_time  INTEGER,
     memory_usage    INTEGER,

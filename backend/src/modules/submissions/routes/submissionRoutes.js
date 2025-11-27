@@ -55,4 +55,11 @@ router.post(
   submissionController.createSubmission
 );
 
+// 제출 취소 (본인만 가능)
+router.post(
+  '/submissions/:id/cancel',
+  requireStudent,
+  submissionController.cancelSubmission
+);
+
 export default router;

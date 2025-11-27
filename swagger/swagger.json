@@ -501,7 +501,7 @@
           { "name": "studentId", "in": "query", "schema": { "type": "integer" } },
           { "name": "problemId", "in": "query", "schema": { "type": "integer" } },
           { "name": "sessionId", "in": "query", "schema": { "type": "integer" } },
-          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["AC", "WA", "TLE", "RE", "SE", "MLE"] } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["AC", "WA", "TLE", "RE", "SE", "MLE", "pending", "judging", "cancelled"] } },
           { "$ref": "#/components/parameters/Page" },
           { "$ref": "#/components/parameters/Limit" }
         ],
@@ -1011,7 +1011,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "integer" }, "problemId": { "type": "integer" }, "problemTitle": { "type": "string" },
-          "studentName": { "type": "string" }, "status": { "type": "string", "enum": ["AC", "WA", "TLE", "RE", "SE", "MLE", "pending", "judging"] },
+          "studentName": { "type": "string" }, "status": { "type": "string", "enum": ["AC", "WA", "TLE", "RE", "SE", "MLE", "pending", "judging", "cancelled"] },
           "executionTime": { "type": "integer" }, "memoryUsage": { "type": "integer" }, "submittedAt": { "type": "string", "format": "date-time" }
         }
       },
@@ -1030,7 +1030,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "integer" }, "submissionId": { "type": "integer" },
-          "status": { "type": "string", "enum": ["AC", "WA", "TLE", "RE", "SE", "MLE", "pending", "judging"] },
+          "status": { "type": "string", "enum": ["AC", "WA", "TLE", "RE", "SE", "MLE", "pending", "judging", "cancelled"] },
           "passedCases": { "type": "integer" }, "totalCases": { "type": "integer" },
           "executionTime": { "type": "integer" }, "memoryUsage": { "type": "integer" },
           "errorMessage": { "type": "string" }, "judgedAt": { "type": "string", "format": "date-time" }

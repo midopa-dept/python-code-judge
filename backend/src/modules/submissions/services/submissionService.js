@@ -594,11 +594,79 @@ export const createSubmissionService = (deps = {}) => {
     }
   };
 
+  const cancelSubmission = async (submissionId, userId) => {
+    const parsedSubmissionId = parseInt(submissionId, 10);
+    if (!parsedSubmissionId) {
+      throw new ValidationError('submissionId는 숫자여야 합니다.');
+    }
+
+    const parsedUserId = parseInt(userId, 10);
+    if (!parsedUserId) {
+      throw new ValidationError('userId는 숫자여야 합니다.');
+    }
+
+    const client = await getDbClient();
+
+    try {
+      await client.query('BEGIN');
+
+      // 제출 정보 조회
+      const submissionResult = await client.query(
+        `
+        SELECT id, student_id, status
+        FROM submissions
+        WHERE id = $1
+        FOR UPDATE
+        `,
+        [parsedSubmissionId]
+      );
+
+      if (submissionResult.rows.length === 0) {
+        throw new NotFoundError('제출을 찾을 수 없습니다.');
+      }
+
+      const submission = submissionResult.rows[0];
+
+      // 본인 제출인지 확인
+      if (submission.student_id !== parsedUserId) {
+        throw new ForbiddenError('본인 제출만 취소할 수 있습니다.');
+      }
+
+      // 채점 대기 상태(pending)인지 확인 - 채점 시작(judging) 상태면 취소 불가
+      if (submission.status !== 'pending') {
+        throw new AppError('이미 채점이 시작되어 취소할 수 없습니다.', 409, 'CANNOT_CANCEL_SUBMISSION');
+      }
+
+      // 제출 상태를 취소됨으로 업데이트
+      await client.query(
+        `
+        UPDATE submissions
+        SET status = 'cancelled', error_message = '사용자에 의해 취소됨'
+        WHERE id = $1
+        `,
+        [parsedSubmissionId]
+      );
+
+      await client.query('COMMIT');
+
+      return {
+        submissionId: parsedSubmissionId,
+        message: '제출이 성공적으로 취소되었습니다.',
+      };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  };
+
   return {
     getSubmissions,
     getSubmissionResult,
     submitCode,
     applyJudgeResult,
+    cancelSubmission,
   };
 };
 

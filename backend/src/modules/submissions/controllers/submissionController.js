@@ -80,6 +80,20 @@ export const submissionController = {
       next(error);
     }
   },
+
+  async cancelSubmission(req, res, next) {
+    try {
+      const { id } = req.params;
+      const result = await submissionService.cancelSubmission(id, req.user.id);
+
+      res.status(200).json({
+        success: true,
+        message: result.message,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
 };
 
 export default submissionController;
