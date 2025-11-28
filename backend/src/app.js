@@ -48,60 +48,24 @@ app.use('/api', submissionRoutes);
 // 프론트엔드 빌드 파일 제공 (정적 파일)
 // 프로덕션 환경에서만 제공
 if (config.nodeEnv === 'production') {
-  // CSS 및 JS 파일을 위한 MIME 타입 설정 미들웨어를 먼저 추가
-  app.use((req, res, next) => {
-    if (req.url.endsWith('.css')) {
-      res.setHeader('Content-Type', 'text/css');
-    } else if (req.url.endsWith('.js')) {
-      res.setHeader('Content-Type', 'application/javascript');
-    } else if (req.url.endsWith('.svg')) {
-      res.setHeader('Content-Type', 'image/svg+xml');
-    }
-    next();
-  });
-
   // 정적 파일 제공 미들웨어를 API 라우트 후에 등록
-  app.use(express.static(path.join(__dirname, '../frontend-dist')));
-
-  // 정적 파일 제공 미들웨어가 파일을 찾지 못하면 미들웨어 체인 계속 진행
-  // 정적 파일이 존재하지 않을 때의 처리를 위해 별도의 미들웨어 추가
-  app.get(/^(?!\/api\/).*$/, async (req, res, next) => {
-    console.log(`Static file not found, checking for API route: ${req.path}`);
-    if (req.path.startsWith('/api/')) {
-      // API 요청은 다음 미들웨어로 전달
-      next();
-    } else {
-      // React Router를 위한 처리 - API 경로가 아닌 경우 index.html 제공
-      console.log(`Serving index.html for route: ${req.path}`);
-      const indexPath = path.join(__dirname, '../frontend-dist/index.html');
-
-      // index.html 파일이 존재하는지 확인 후 제공
-      try {
-        const fs = await import('fs');
-        const pathModule = await import('path');
-
-        // CSS, JS, 또는 기타 정적 파일인지 확인
-        const ext = pathModule.extname(req.path);
-        if (ext) {
-          // 정적 파일이지만 존재하지 않음 - 404 오류
-          console.log(`Static file not found: ${req.path}`);
-          next(); // 404 핸들러로 전달
-          return;
-        }
-
-        fs.access(indexPath, fs.constants.F_OK, (err) => {
-          if (err) {
-            console.error(`index.html not found at path: ${indexPath}`);
-            res.status(500).json({ error: 'Frontend build files not found' });
-          } else {
-            res.sendFile(indexPath);
-          }
-        });
-      } catch (err) {
-        console.error('Failed to import fs module:', err);
-        res.status(500).json({ error: 'Server configuration error' });
+  app.use(express.static(path.join(__dirname, '../frontend-dist'), {
+    // MIME 타입 문제 해결을 위한 설정
+    setHeaders: (res, filepath) => {
+      if (filepath.endsWith('.css')) {
+        res.setHeader('Content-Type', 'text/css');
+      } else if (filepath.endsWith('.js')) {
+        res.setHeader('Content-Type', 'application/javascript');
+      } else if (filepath.endsWith('.svg')) {
+        res.setHeader('Content-Type', 'image/svg+xml');
       }
     }
+  }));
+
+  // 정적 파일이 존재하지 않을 때의 처리를 위해 별도의 미들웨어 추가
+  app.get(/^(?!\/api\/).*$/, (req, res) => {
+    console.log(`Serving index.html for route: ${req.path}`);
+    res.sendFile(path.join(__dirname, '../frontend-dist/index.html'));
   });
 } else {
   // 개발 환경에서는 기존 API 엔드포인트만 작동
