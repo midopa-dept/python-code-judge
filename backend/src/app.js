@@ -98,15 +98,25 @@ app.get('/api/debug/frontend-files', (req, res) => {
   }
 });
 
-// 프로덕션 환경에서 정적 파일 제공 (API 라우트보다 먼저!)
+// API 라우트 등록
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api', problemRoutes);
+app.use('/api', categoryRoutes);
+app.use('/api/sessions', sessionRoutes);
+app.use('/api/audit-logs', auditRoutes);
+app.use('/api', submissionRoutes);
+
+// 프로덕션 환경에서 정적 파일 및 SPA 설정
 if (config.nodeEnv === 'production') {
   const frontendPath = path.join(__dirname, '../frontend-dist');
   console.log('📦 Serving static files from:', frontendPath);
   
   // 정적 파일 제공 (assets 폴더 등)
   app.use(express.static(frontendPath, {
-    maxAge: '1d',
+    index: false, // index.html 자동 서빙 비활성화 (SPA fallback에서 처리)
     setHeaders: (res, filepath) => {
+      console.log('📦 Serving static file:', filepath);
       if (filepath.endsWith('.css')) {
         res.setHeader('Content-Type', 'text/css; charset=utf-8');
       } else if (filepath.endsWith('.js')) {
@@ -118,25 +128,9 @@ if (config.nodeEnv === 'production') {
       }
     }
   }));
-}
-
-// API 라우트 등록
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api', problemRoutes);
-app.use('/api', categoryRoutes);
-app.use('/api/sessions', sessionRoutes);
-app.use('/api/audit-logs', auditRoutes);
-app.use('/api', submissionRoutes);
-
-// 프로덕션 환경에서 SPA fallback (모든 non-API, non-static 요청을 index.html로)
-if (config.nodeEnv === 'production') {
-  app.get('*', (req, res, next) => {
-    // API 요청과 정적 파일 요청은 건너뜀
-    if (req.path.startsWith('/api/') || req.path.startsWith('/assets/')) {
-      return next();
-    }
-    
+  
+  // SPA fallback - API가 아닌 모든 요청을 index.html로
+  app.get('*', (req, res) => {
     const indexPath = path.join(__dirname, '../frontend-dist/index.html');
     console.log(`📄 Serving index.html for: ${req.path}`);
     res.sendFile(indexPath, (err) => {
