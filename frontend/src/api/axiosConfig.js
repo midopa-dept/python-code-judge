@@ -4,7 +4,7 @@ import axios from 'axios';
 // 프로덕션: Render 백엔드 URL 사용
 // 개발: localhost:3000 사용 (별도 서버)
 const API_BASE_URL = process.env.NODE_ENV === 'production'
-  ? 'https://python-judge.onrender.com/api'
+  ? 'https://python-code-judge-1.onrender.com/api'
   : 'http://localhost:3000/api';
 
 // axios 인스턴스 생성
