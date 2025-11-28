@@ -48,19 +48,20 @@ app.use('/api', submissionRoutes);
 // 프론트엔드 빌드 파일 제공 (정적 파일)
 // 프로덕션 환경에서만 제공
 if (config.nodeEnv === 'production') {
-  // 정적 파일 제공 미들웨어를 API 라우트 후에 등록
-  app.use(express.static(path.join(__dirname, '../frontend-dist'), {
-    // 정적 파일 제공 시 오류 발생 시 로그 출력
-    setHeaders: (res, path) => {
-      console.log(`Serving static file: ${path}`);
-      // CSS 파일에 대해 올바른 MIME 타입 설정
-      if (path.endsWith('.css')) {
-        res.setHeader('Content-Type', 'text/css');
-      } else if (path.endsWith('.js')) {
-        res.setHeader('Content-Type', 'application/javascript');
-      }
+  // CSS 및 JS 파일을 위한 MIME 타입 설정 미들웨어를 먼저 추가
+  app.use((req, res, next) => {
+    if (req.url.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css');
+    } else if (req.url.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+    } else if (req.url.endsWith('.svg')) {
+      res.setHeader('Content-Type', 'image/svg+xml');
     }
-  }));
+    next();
+  });
+
+  // 정적 파일 제공 미들웨어를 API 라우트 후에 등록
+  app.use(express.static(path.join(__dirname, '../frontend-dist')));
 
   // 정적 파일이 존재하지 않을 때의 처리를 위해 별도의 미들웨어 추가
   app.use((req, res, next) => {
