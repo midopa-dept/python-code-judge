@@ -32,6 +32,12 @@ export const problemController = {
         req.user
       );
 
+      console.log('문제 목록 조회 결과:', {
+        totalItems,
+        problemsCount: problems.length,
+        sampleProblem: problems.length > 0 ? { id: problems[0].id, title: problems[0].title } : null
+      });
+
       res.status(200).json({
         success: true,
         data: {

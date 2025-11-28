@@ -19,7 +19,13 @@ const router = express.Router();
 router.use(authenticate);
 
 // 문제 관리
-router.get('/problems', validateGetProblems, problemController.getProblems);
+router.get('/problems', validateGetProblems, (req, res, next) => {
+  console.log('GET /api/problems 요청 수신:', {
+    user: req.user,
+    query: req.query
+  });
+  problemController.getProblems(req, res, next);
+});
 router.get('/problems/:id', validateProblemId, problemController.getProblem);
 
 router.post(
