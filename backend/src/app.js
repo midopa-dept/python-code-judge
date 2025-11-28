@@ -39,10 +39,20 @@ app.use(requestLogger);
 // 프론트엔드 빌드 파일 제공 (정적 파일)
 // 프로덕션 환경에서만 제공
 if (config.nodeEnv === 'production') {
-  app.use(express.static(path.join(__dirname, '../frontend-dist')));
+  // static 미들웨어를 API 라우트보다 먼저 등록하여 파일 요청을 우선 처리
+  app.use('/assets', express.static(path.join(__dirname, '../frontend-dist/assets')));
+  app.use('/favicon.ico', express.static(path.join(__dirname, '../frontend-dist/favicon.ico')));
+  app.use('/logo192.png', express.static(path.join(__dirname, '../frontend-dist/logo192.png'))); // React 기본 이미지
+  app.use('/logo512.png', express.static(path.join(__dirname, '../frontend-dist/logo512.png'))); // React 기본 이미지
+  app.use('/manifest.json', express.static(path.join(__dirname, '../frontend-dist/manifest.json')));
 
-  // React Router를 위한 처리 - 존재하지 않는 API 경로가 아닌 경우 index.html 제공
+  // React Router를 위한 처리 - API 경로가 아닌 경우 index.html 제공
   app.get('*', (req, res) => {
+    // API 요청은 처리하지 않고 다음 미들웨어(404 핸들러)로 전달
+    if (req.path.startsWith('/api/')) {
+      next();
+      return;
+    }
     res.sendFile(path.join(__dirname, '../frontend-dist/index.html'));
   });
 } else {
