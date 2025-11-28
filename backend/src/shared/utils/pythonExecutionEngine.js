@@ -174,9 +174,16 @@ export const runIsolatedPython = async ({
     child.on('close', async () => {
       await removeDirSafe(runDir);
       try {
+        // stderr가 있으면 로깅
+        if (stderr) {
+          console.error('Python runner stderr:', stderr);
+        }
         const parsed = parseRunnerOutput(stdout.trim());
         resolve(parsed);
       } catch (err) {
+        // stdout과 stderr 모두 로깅
+        console.error('Runner output error - stdout:', stdout);
+        console.error('Runner output error - stderr:', stderr);
         reject(err);
       }
     });
