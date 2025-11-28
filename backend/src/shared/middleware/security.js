@@ -24,8 +24,19 @@ export const corsOptions = {
         callback(new Error('CORS policy: Not allowed by CORS'));
       }
     } else {
-      // 개발 환경에서는 모든 도메인 허용 (기존 동작)
-      callback(null, true);
+      // 개발 환경에서는 로컬 프론트엔드 주소와 모든 요청 허용
+      const allowedDevOrigins = [
+        'http://localhost:5173',  // Vite 기본 포트
+        'http://localhost:3000',  // 백엔드 서버
+        'http://127.0.0.1:5173',
+        'http://127.0.0.1:3000'
+      ];
+
+      if (!origin || allowedDevOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, true); // 개발 환경에서는 모든 origin 허용 (임시)
+      }
     }
   },
   credentials: true,
