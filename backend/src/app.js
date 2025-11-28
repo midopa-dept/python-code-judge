@@ -49,11 +49,30 @@ app.use('/api', submissionRoutes);
 // 프로덕션 환경에서만 제공
 if (config.nodeEnv === 'production') {
   // 정적 파일 제공 미들웨어를 API 라우트 후에 등록
-  app.use(express.static(path.join(__dirname, '../frontend-dist')));
+  app.use(express.static(path.join(__dirname, '../frontend-dist'), {
+    // 정적 파일 제공 시 오류 발생 시 로그 출력
+    setHeaders: (res, path) => {
+      console.log(`Serving static file: ${path}`);
+      // CSS 파일에 대해 올바른 MIME 타입 설정
+      if (path.endsWith('.css')) {
+        res.setHeader('Content-Type', 'text/css');
+      } else if (path.endsWith('.js')) {
+        res.setHeader('Content-Type', 'application/javascript');
+      }
+    }
+  }));
 
-  // React Router를 위한 처리 - API 경로가 아닌 경우 index.html 제공
-  app.get(/^(?!\/api\/).*$/, (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend-dist/index.html'));
+  // 정적 파일이 존재하지 않을 때의 처리를 위해 별도의 미들웨어 추가
+  app.use((req, res, next) => {
+    console.log(`Static file not found, checking for API route: ${req.path}`);
+    if (req.path.startsWith('/api/')) {
+      // API 요청은 다음 미들웨어로 전달
+      next();
+    } else {
+      // React Router를 위한 처리 - API 경로가 아닌 경우 index.html 제공
+      console.log(`Serving index.html for route: ${req.path}`);
+      res.sendFile(path.join(__dirname, '../frontend-dist/index.html'));
+    }
   });
 } else {
   // 개발 환경에서는 기존 API 엔드포인트만 작동
