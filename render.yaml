@@ -7,6 +7,8 @@ services:
       cd frontend &&
       npm install &&
       npm run build &&
+      # 프론트엔드 빌드 파일을 백엔드 디렉터리로 이동
+      mv dist ../backend/frontend-dist &&
       cd ../backend &&
       npm install
     startCommand: |

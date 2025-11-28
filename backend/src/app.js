@@ -39,12 +39,15 @@ app.use(requestLogger);
 // 프론트엔드 빌드 파일 제공 (정적 파일)
 // 프로덕션 환경에서만 제공
 if (config.nodeEnv === 'production') {
-  app.use(express.static(path.join(__dirname, '../../frontend/dist')));
+  app.use(express.static(path.join(__dirname, '../frontend-dist')));
 
   // React Router를 위한 처리 - 존재하지 않는 API 경로가 아닌 경우 index.html 제공
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../frontend/dist/index.html'));
+    res.sendFile(path.join(__dirname, '../frontend-dist/index.html'));
   });
+} else {
+  // 개발 환경에서는 기존 API 엔드포인트만 작동
+  console.log('Development mode: Frontend static files are not served');
 }
 
 // Health check endpoint
