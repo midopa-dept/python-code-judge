@@ -101,6 +101,57 @@ app.get('/api/health', async (req, res) => {
   });
 });
 
+// Debug: 프론트엔드 파일 확인 (프로덕션에서만)
+if (config.nodeEnv === 'production') {
+  app.get('/api/debug/frontend-files', (req, res) => {
+    const fs = require('fs');
+    const frontendPath = path.join(__dirname, '../frontend-dist');
+    
+    try {
+      const exists = fs.existsSync(frontendPath);
+      let files = [];
+      let indexHtmlExists = false;
+      
+      if (exists) {
+        files = fs.readdirSync(frontendPath, { withFileTypes: true });
+        indexHtmlExists = fs.existsSync(path.join(frontendPath, 'index.html'));
+        
+        // assets 폴더도 확인
+        const assetsPath = path.join(frontendPath, 'assets');
+        const assetsExists = fs.existsSync(assetsPath);
+        let assetsFiles = [];
+        
+        if (assetsExists) {
+          assetsFiles = fs.readdirSync(assetsPath);
+        }
+        
+        res.json({
+          frontendPath,
+          exists,
+          indexHtmlExists,
+          files: files.map(f => ({
+            name: f.name,
+            isDirectory: f.isDirectory()
+          })),
+          assetsExists,
+          assetsFiles: assetsFiles.slice(0, 10) // 처음 10개만
+        });
+      } else {
+        res.json({
+          frontendPath,
+          exists: false,
+          error: 'frontend-dist directory does not exist'
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        error: error.message,
+        stack: error.stack
+      });
+    }
+  });
+}
+
 // 404 핸들러
 app.use(notFoundHandler);
 
