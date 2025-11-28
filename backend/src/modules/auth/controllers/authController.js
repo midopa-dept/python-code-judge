@@ -4,14 +4,14 @@ export const authController = {
   // POST /api/auth/signup - 학생 회원가입
   async signup(req, res, next) {
     try {
-      const { username, password, military_number, name, rank } = req.body;
+      const { username, password, email, name, group_info } = req.body;
 
       const result = await authService.signup(
         username,
         password,
-        military_number,
+        email,
         name,
-        rank
+        group_info
       );
 
       res.status(201).json({
@@ -44,12 +44,12 @@ export const authController = {
   // POST /api/auth/reset-password - 비밀번호 찾기
   async resetPassword(req, res, next) {
     try {
-      const { username, new_password, military_number } = req.body;
+      const { username, new_password, email } = req.body;
 
       const result = await authService.resetPassword(
         username,
         new_password,
-        military_number
+        email
       );
 
       res.status(200).json({

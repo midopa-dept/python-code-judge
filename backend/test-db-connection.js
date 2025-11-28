@@ -1,51 +1,56 @@
-import { testDatabaseConnection, query } from './src/config/database.js';
+import pg from 'pg';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const { Pool } = pg;
 
 async function testConnection() {
-  console.log('데이터베이스 연결 테스트 시작...\n');
+  const connectionString = process.env.DATABASE_URL;
+
+  console.log('=== 데이터베이스 연결 테스트 ===');
+  console.log('Connection String:', connectionString?.replace(/:[^:@]+@/, ':****@'));
+
+  const isPooler = connectionString.includes('pooler.supabase.com');
+
+  const pool = new Pool({
+    connectionString,
+    ...(!isPooler && {
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    }),
+  });
 
   try {
-    // 1. 기본 연결 테스트
-    const connected = await testDatabaseConnection();
-    console.log('연결 테스트 결과:', connected ? '성공' : '실패');
+    console.log('\n연결 시도 중...');
+    const client = await pool.connect();
+    console.log('✓ 연결 성공!');
 
-    if (!connected) {
-      process.exit(1);
-    }
+    const result = await client.query('SELECT current_user, current_database(), version()');
+    console.log('\n데이터베이스 정보:');
+    console.log('- 사용자:', result.rows[0].current_user);
+    console.log('- 데이터베이스:', result.rows[0].current_database);
+    console.log('- 버전:', result.rows[0].version.split('\n')[0]);
 
-    // 2. 테이블 목록 조회
-    console.log('\n테이블 목록 조회:');
-    const tablesResult = await query(`
-      SELECT table_name
-      FROM information_schema.tables
-      WHERE table_schema = 'public'
-      AND table_type = 'BASE TABLE'
-      ORDER BY table_name
-    `);
-    console.log(`  총 ${tablesResult.rows.length}개 테이블`);
-    tablesResult.rows.forEach(row => console.log(`  - ${row.table_name}`));
+    client.release();
+    await pool.end();
 
-    // 3. 데이터 카운트
-    console.log('\n데이터 카운트:');
-    const counts = {
-      administrators: await query('SELECT COUNT(*) FROM administrators'),
-      students: await query('SELECT COUNT(*) FROM students'),
-      problems: await query('SELECT COUNT(*) FROM problems'),
-      test_cases: await query('SELECT COUNT(*) FROM test_cases'),
-      education_sessions: await query('SELECT COUNT(*) FROM education_sessions'),
-      submissions: await query('SELECT COUNT(*) FROM submissions'),
-      judging_results: await query('SELECT COUNT(*) FROM judging_results'),
-      scoreboards: await query('SELECT COUNT(*) FROM scoreboards'),
-    };
-
-    for (const [table, result] of Object.entries(counts)) {
-      console.log(`  - ${table}: ${result.rows[0].count}개`);
-    }
-
-    console.log('\n모든 테스트 통과!');
+    console.log('\n✓ 테스트 완료');
     process.exit(0);
-
   } catch (error) {
-    console.error('테스트 실패:', error);
+    console.error('\n✗ 연결 실패');
+    console.error('에러 코드:', error.code);
+    console.error('에러 메시지:', error.message);
+
+    if (error.code === '28P01') {
+      console.error('\n비밀번호 인증 실패입니다.');
+      console.error('Supabase 대시보드에서 다음을 확인하세요:');
+      console.error('1. Settings > Database > Connection string (URI)');
+      console.error('2. 비밀번호를 재설정했다면 새 connection string을 복사하세요.');
+    }
+
+    await pool.end();
     process.exit(1);
   }
 }
