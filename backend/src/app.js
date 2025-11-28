@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { config } from './config/env.js';
 import { testDatabaseConnection } from './config/database.js';
@@ -51,7 +52,6 @@ app.get('/api/health', async (req, res) => {
 
 // Debug: 프론트엔드 파일 확인 (인증 불필요)
 app.get('/api/debug/frontend-files', (req, res) => {
-  const fs = require('fs');
   const frontendPath = path.join(__dirname, '../frontend-dist');
   
   try {
