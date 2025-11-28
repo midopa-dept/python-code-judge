@@ -7,7 +7,27 @@ import { config } from '../../config/env.js';
  * CORS 설정
  */
 export const corsOptions = {
-  origin: true, // 모든 origin 허용
+  origin: function (origin, callback) {
+    // 프로덕션에서는 특정 도메인만 허용
+    if (process.env.NODE_ENV === 'production') {
+      // Render에서 생성된 도메인 허용
+      const allowedOrigins = [
+        'https://python-judge.render.com', // Render 도메인
+        'https://python-judge-fullstack.onrender.com', // 실제 배포 도메인
+        ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []) // 환경 변수에 설정된 프론트엔드 URL
+      ];
+
+      // origin이 허용된 도메인에 포함되면 허용
+      if (!origin || allowedOrigins.some(allowed => origin.includes(allowed.replace('https://', '')))) {
+        callback(null, true);
+      } else {
+        callback(new Error('CORS policy: Not allowed by CORS'));
+      }
+    } else {
+      // 개발 환경에서는 모든 도메인 허용 (기존 동작)
+      callback(null, true);
+    }
+  },
   credentials: true,
   optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -24,6 +44,7 @@ export const helmetConfig = helmet({
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
       imgSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: ["'self'", 'https://python-judge.render.com', 'https://*.supabase.co'], // API 호출 및 Supabase 연결 허용
     },
   },
   hsts: {
