@@ -5,9 +5,7 @@ import AppError, { UnauthorizedError, ValidationError, ConflictError } from '../
 
 export const authService = {
   // 학생 회원가입
-  async signup(username, password, military_number, name, rank) {
-    const militaryNumber = military_number?.trim() || null;
-
+  async signup(username, password, email, name, group_info) {
     const duplicateLoginResult = await query(
       `SELECT id FROM users WHERE login_id = $1`,
       [username]
@@ -16,30 +14,20 @@ export const authService = {
       throw new ConflictError('이미 사용 중인 아이디입니다.');
     }
 
-    if (militaryNumber) {
-      const duplicateMilResult = await query(
-        `SELECT id FROM users WHERE military_id = $1`,
-        [militaryNumber]
-      );
-      if (duplicateMilResult.rows.length > 0) {
-        throw new ConflictError('이미 사용 중인 군번입니다.');
-      }
-    }
-
     const passwordHash = await hashPassword(password);
 
     const insertQuery = `
-      INSERT INTO users (military_id, login_id, name, password_hash, group_info, role, account_status)
+      INSERT INTO users (login_id, name, password_hash, email, group_info, role, account_status)
       VALUES ($1, $2, $3, $4, $5, 'student', 'active')
-      RETURNING id, login_id, name, military_id, role, created_at
+      RETURNING id, login_id, name, email, group_info, role, created_at
     `;
 
     const result = await query(insertQuery, [
-      militaryNumber,
       username,
       name,
       passwordHash,
-      rank || null,
+      email || null,
+      group_info || null,
     ]);
 
     const newUser = result.rows[0];
@@ -48,7 +36,6 @@ export const authService = {
       {
         id: newUser.id,
         username: newUser.login_id,
-        military_number: newUser.military_id,
       },
       'student'
     );
@@ -59,7 +46,8 @@ export const authService = {
         id: newUser.id,
         loginId: newUser.login_id,
         name: newUser.name,
-        militaryNumber: newUser.military_id,
+        email: newUser.email,
+        groupInfo: newUser.group_info,
         role: newUser.role,
       },
     };
@@ -68,7 +56,7 @@ export const authService = {
   // 로그인(학생/관리자 공용)
   async login(loginId, password) {
     const userQuery = `
-      SELECT id, login_id, name, password_hash, role, account_status, military_id
+      SELECT id, login_id, name, password_hash, role, account_status, email, group_info
       FROM users
       WHERE login_id = $1
     `;
@@ -94,7 +82,6 @@ export const authService = {
       {
         id: user.id,
         username: user.login_id,
-        military_number: user.military_id,
       },
       user.role
     );
@@ -106,15 +93,16 @@ export const authService = {
         loginId: user.login_id,
         name: user.name,
         role: user.role,
-        militaryNumber: user.military_id,
+        email: user.email,
+        groupInfo: user.group_info,
       },
     };
   },
 
   // 비밀번호 찾기(재설정)
-  async resetPassword(username, new_password, military_number) {
+  async resetPassword(username, new_password, email) {
     const userQuery = `
-      SELECT id, login_id, name, account_status, military_id
+      SELECT id, login_id, name, account_status, email
       FROM users
       WHERE login_id = $1
     `;
@@ -129,8 +117,8 @@ export const authService = {
       throw new UnauthorizedError('휴면이거나 정지된 계정입니다.');
     }
 
-    if (military_number && user.military_id && user.military_id !== military_number) {
-      throw new ValidationError('군번이 일치하지 않습니다.');
+    if (email && user.email && user.email !== email) {
+      throw new ValidationError('이메일이 일치하지 않습니다.');
     }
 
     const passwordHash = await hashPassword(new_password);
@@ -178,7 +166,7 @@ export const authService = {
   // 현재 로그인한 사용자 정보 조회
   async getCurrentUser(userId) {
     const userQuery = `
-      SELECT id, login_id, name, email, role, group_info, military_id, account_status, created_at, last_login
+      SELECT id, login_id, name, email, role, group_info, account_status, created_at, last_login
       FROM users
       WHERE id = $1
     `;
@@ -200,7 +188,6 @@ export const authService = {
       email: user.email,
       role: user.role,
       groupInfo: user.group_info,
-      militaryNumber: user.military_id,
       accountStatus: user.account_status,
       createdAt: user.created_at,
       lastLogin: user.last_login,

@@ -7,10 +7,10 @@ import { config } from '../../config/env.js';
  * CORS 설정
  */
 export const corsOptions = {
-  origin: config.frontend.url,
+  origin: true, // 모든 origin 허용
   credentials: true,
   optionsSuccessStatus: 200,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 

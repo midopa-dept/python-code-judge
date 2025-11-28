@@ -2,12 +2,7 @@
   "mcpServers": {
     "postgresql-mcp": {
       "command": "cmd",
-      "args": [
-        "/c",
-        "npx",
-        "-y",
-        "@henkey/postgres-mcp-server"
-      ]
+      "args": ["/c", "npx", "-y", "@henkey/postgres-mcp-server"]
     },
     "context7": {
       "command": "cmd",
@@ -22,13 +17,7 @@
     },
     "chadcn": {
       "command": "cmd",
-      "args": [
-        "/c",
-        "npx",
-        "-y",
-        "shadcn@latest",
-        "mcp"
-      ]
+      "args": ["/c", "npx", "-y", "shadcn@latest", "mcp"]
     },
     "sequential-thinking": {
       "command": "cmd",
@@ -41,21 +30,17 @@
     },
     "playwright": {
       "command": "cmd",
-      "args": [
-        "/c",
-        "npx",
-        "-y",
-        "@playwright/mcp@latest"
-      ]
+      "args": ["/c", "npx", "-y", "@playwright/mcp@latest"]
     },
     "chrome-devtools": {
       "command": "cmd",
-      "args": [
-        "/c",
-        "npx",
-        "-y",
-        "chrome-devtools-mcp@latest"
-      ]
+      "args": ["/c", "npx", "-y", "chrome-devtools-mcp@latest"]
+    },
+    "render": {
+      "url": "https://mcp.render.com/mcp",
+      "headers": {
+        "Authorization": "Bearer rnd_huiVO38lHsT3s3Odb7m8fO5t8eD5"
+      }
     }
   },
   "$version": 2
