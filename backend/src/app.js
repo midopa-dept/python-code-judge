@@ -36,6 +36,68 @@ app.use(express.urlencoded({ extended: true }));
 // 요청 로깅
 app.use(requestLogger);
 
+// Health check endpoint (인증 불필요)
+app.get('/api/health', async (req, res) => {
+  const dbConnected = await testDatabaseConnection();
+
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: config.nodeEnv,
+    database: dbConnected ? 'connected' : 'disconnected',
+    uptime: process.uptime(),
+  });
+});
+
+// Debug: 프론트엔드 파일 확인 (인증 불필요)
+app.get('/api/debug/frontend-files', (req, res) => {
+  const fs = require('fs');
+  const frontendPath = path.join(__dirname, '../frontend-dist');
+  
+  try {
+    const exists = fs.existsSync(frontendPath);
+    let files = [];
+    let indexHtmlExists = false;
+    
+    if (exists) {
+      files = fs.readdirSync(frontendPath, { withFileTypes: true });
+      indexHtmlExists = fs.existsSync(path.join(frontendPath, 'index.html'));
+      
+      // assets 폴더도 확인
+      const assetsPath = path.join(frontendPath, 'assets');
+      const assetsExists = fs.existsSync(assetsPath);
+      let assetsFiles = [];
+      
+      if (assetsExists) {
+        assetsFiles = fs.readdirSync(assetsPath);
+      }
+      
+      res.json({
+        frontendPath,
+        exists,
+        indexHtmlExists,
+        files: files.map(f => ({
+          name: f.name,
+          isDirectory: f.isDirectory()
+        })),
+        assetsExists,
+        assetsFiles: assetsFiles.slice(0, 10) // 처음 10개만
+      });
+    } else {
+      res.json({
+        frontendPath,
+        exists: false,
+        error: 'frontend-dist directory does not exist'
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 // 프로덕션 환경에서 정적 파일 제공 (API 라우트보다 먼저!)
 if (config.nodeEnv === 'production') {
   const frontendPath = path.join(__dirname, '../frontend-dist');
@@ -86,70 +148,6 @@ if (config.nodeEnv === 'production') {
   });
 } else {
   console.log('Development mode: Frontend static files are not served');
-}
-
-// Health check endpoint
-app.get('/api/health', async (req, res) => {
-  const dbConnected = await testDatabaseConnection();
-
-  res.status(200).json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    environment: config.nodeEnv,
-    database: dbConnected ? 'connected' : 'disconnected',
-    uptime: process.uptime(),
-  });
-});
-
-// Debug: 프론트엔드 파일 확인 (프로덕션에서만)
-if (config.nodeEnv === 'production') {
-  app.get('/api/debug/frontend-files', (req, res) => {
-    const fs = require('fs');
-    const frontendPath = path.join(__dirname, '../frontend-dist');
-    
-    try {
-      const exists = fs.existsSync(frontendPath);
-      let files = [];
-      let indexHtmlExists = false;
-      
-      if (exists) {
-        files = fs.readdirSync(frontendPath, { withFileTypes: true });
-        indexHtmlExists = fs.existsSync(path.join(frontendPath, 'index.html'));
-        
-        // assets 폴더도 확인
-        const assetsPath = path.join(frontendPath, 'assets');
-        const assetsExists = fs.existsSync(assetsPath);
-        let assetsFiles = [];
-        
-        if (assetsExists) {
-          assetsFiles = fs.readdirSync(assetsPath);
-        }
-        
-        res.json({
-          frontendPath,
-          exists,
-          indexHtmlExists,
-          files: files.map(f => ({
-            name: f.name,
-            isDirectory: f.isDirectory()
-          })),
-          assetsExists,
-          assetsFiles: assetsFiles.slice(0, 10) // 처음 10개만
-        });
-      } else {
-        res.json({
-          frontendPath,
-          exists: false,
-          error: 'frontend-dist directory does not exist'
-        });
-      }
-    } catch (error) {
-      res.status(500).json({
-        error: error.message,
-        stack: error.stack
-      });
-    }
-  });
 }
 
 // 404 핸들러
