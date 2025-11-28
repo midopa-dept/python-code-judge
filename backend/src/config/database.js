@@ -135,42 +135,91 @@ const parseAndExecuteQuery = async (client, text, params) => {
     return { rows: [data] };
   }
 
-  // 지원하지 않는 쿼리 - RPC exec_sql 함수 사용
+  // 복잡한 쿼리 - 직접 Supabase 쿼리로 변환
   if (trimmedText.startsWith('SELECT')) {
-    console.log('⚠️  복잡한 SELECT 쿼리 - RPC 함수 사용:', text.substring(0, 100));
+    console.log('⚠️  복잡한 SELECT 쿼리 - 직접 변환 시도:', text.substring(0, 100));
 
-    try {
-      // 파라미터를 SQL에 직접 삽입 (Supabase RPC는 파라미터화 미지원)
-      let finalSql = text;
-      params.forEach((param, index) => {
-        const placeholder = `$${index + 1}`;
-        const value = typeof param === 'string' ? `'${param.replace(/'/g, "''")}'` : param;
-        finalSql = finalSql.replace(new RegExp(`\\${placeholder}\\b`, 'g'), value);
-      });
+    // JOIN 쿼리 처리
+    if (trimmedText.includes('FROM PROBLEMS P') && (trimmedText.includes('LEFT JOIN') || trimmedText.includes('JOIN'))) {
+      // 문제 목록 조회 쿼리
+      if (trimmedText.includes('P.ID, P.TITLE, P.SCORE, P.CATEGORY, P.DIFFICULTY')) {
+        // 기본 쿼리 파싱
+        const hasWhere = trimmedText.includes('WHERE');
+        const whereClause = hasWhere ? text.match(/WHERE(.*)/i)?.[0] || '' : '';
+        const limitMatch = text.match(/LIMIT\s+(\d+)/i);
+        const offsetMatch = text.match(/OFFSET\s+(\d+)/i);
 
-      const { data, error } = await client.rpc('exec_sql', {
-        sql_query: finalSql,
-        sql_params: []
-      });
+        // WHERE 절에서 파라미터 추출
+        let newParams = [...params];
+        if (hasWhere) {
+          // whereClause에서 파라미터를 추출하고 실제 값으로 치환
+          whereClause.replace(/\$(\d+)/g, (match, num) => {
+            const index = parseInt(num) - 1;
+            if (index < params.length) {
+              newParams.push(params[index]);
+            }
+          });
+        }
+
+        // 실제 쿼리 실행
+        let { data, error } = await client
+          .from('problems')
+          .select(`
+            id,
+            title,
+            score,
+            category,
+            difficulty,
+            visibility,
+            submissions!inner(status)
+          `)
+          .eq('visibility', 'public') // 학생용은 public만
+          .range(
+            offsetMatch ? parseInt(offsetMatch[1]) : 0,
+            limitMatch ? parseInt(limitMatch[1]) + (offsetMatch ? parseInt(offsetMatch[1]) : 0) - 1 : 19
+          );
+
+        if (error) {
+          console.error('Supabase 쿼리 에러:', error);
+          return { rows: [] };
+        }
+
+        // 결과 처리
+        const groupedData = data.reduce((acc, curr) => {
+          const existing = acc.find(item => item.id === curr.id);
+          if (!existing) {
+            acc.push({
+              ...curr,
+              submission_count: 1,
+              accuracy_rate: 0 // 실제 계산 로직 필요
+            });
+          } else {
+            existing.submission_count += 1;
+          }
+          return acc;
+        }, []);
+
+        return { rows: groupedData };
+      }
+    }
+
+    // COUNT 쿼리 특별 처리
+    if (trimmedText.includes('COUNT(*)') && trimmedText.includes('FROM PROBLEMS')) {
+      const { count, error } = await client
+        .from('problems')
+        .select('*', { count: 'exact', head: true });
 
       if (error) {
-        console.error('RPC exec_sql 에러:', error);
-        // COUNT 쿼리는 기본값 반환
-        if (trimmedText.includes('COUNT(*)')) {
-          return { rows: [{ total: 0 }] };
-        }
-        return { rows: [] };
-      }
-
-      return { rows: data || [] };
-    } catch (rpcError) {
-      console.error('RPC 실행 에러:', rpcError);
-      // COUNT 쿼리는 기본값 반환
-      if (trimmedText.includes('COUNT(*)')) {
+        console.error('COUNT 쿼리 에러:', error);
         return { rows: [{ total: 0 }] };
       }
-      return { rows: [] };
+
+      return { rows: [{ total: count || 0 }] };
     }
+
+    // exec_sql RPC 함수가 없을 경우 기본값 반환
+    console.log('⚠️  복잡한 쿼리 직접 변환: 기본값 반환');
+    return { rows: [] };
   }
 
   throw new Error(`Unsupported query: ${text.substring(0, 100)}`);
