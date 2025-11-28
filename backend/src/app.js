@@ -36,13 +36,21 @@ app.use(express.urlencoded({ extended: true }));
 // 요청 로깅
 app.use(requestLogger);
 
+// API 라우트를 먼저 등록 (정적 파일보다 우선)
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api', problemRoutes);
+app.use('/api', categoryRoutes);
+app.use('/api/sessions', sessionRoutes);
+app.use('/api/audit-logs', auditRoutes);
+app.use('/api', submissionRoutes);
+
 // 프론트엔드 빌드 파일 제공 (정적 파일)
 // 프로덕션 환경에서만 제공
 if (config.nodeEnv === 'production') {
-  // 정적 파일 제공 미들웨어를 라우트보다 먼저 등록 (API 요청과 구분 위해)
+  // 정적 파일 제공 미들웨어를 API 라우트 후에 등록
   app.use(express.static(path.join(__dirname, '../frontend-dist')));
 
-  // API 요청만 처리 (모든 API 요청은 /api로 시작)
   // React Router를 위한 처리 - API 경로가 아닌 경우 index.html 제공
   app.get(/^(?!\/api\/).*$/, (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend-dist/index.html'));
@@ -73,6 +81,19 @@ app.use('/api', categoryRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/audit-logs', auditRoutes);
 app.use('/api', submissionRoutes);
+
+// Health check endpoint
+app.get('/api/health', async (req, res) => {
+  const dbConnected = await testDatabaseConnection();
+
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: config.nodeEnv,
+    database: dbConnected ? 'connected' : 'disconnected',
+    uptime: process.uptime(),
+  });
+});
 
 // 404 핸들러
 app.use(notFoundHandler);
