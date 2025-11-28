@@ -36,7 +36,29 @@ app.use(express.urlencoded({ extended: true }));
 // 요청 로깅
 app.use(requestLogger);
 
-// API 라우트를 먼저 등록 (정적 파일보다 우선)
+// 프로덕션 환경에서 정적 파일 제공 (API 라우트보다 먼저!)
+if (config.nodeEnv === 'production') {
+  const frontendPath = path.join(__dirname, '../frontend-dist');
+  console.log('📦 Serving static files from:', frontendPath);
+  
+  // 정적 파일 제공 (assets 폴더 등)
+  app.use(express.static(frontendPath, {
+    maxAge: '1d',
+    setHeaders: (res, filepath) => {
+      if (filepath.endsWith('.css')) {
+        res.setHeader('Content-Type', 'text/css; charset=utf-8');
+      } else if (filepath.endsWith('.js')) {
+        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      } else if (filepath.endsWith('.svg')) {
+        res.setHeader('Content-Type', 'image/svg+xml');
+      } else if (filepath.endsWith('.html')) {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      }
+    }
+  }));
+}
+
+// API 라우트 등록
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api', problemRoutes);
@@ -45,30 +67,24 @@ app.use('/api/sessions', sessionRoutes);
 app.use('/api/audit-logs', auditRoutes);
 app.use('/api', submissionRoutes);
 
-// 프론트엔드 빌드 파일 제공 (정적 파일)
-// 프로덕션 환경에서만 제공
+// 프로덕션 환경에서 SPA fallback (모든 non-API 요청을 index.html로)
 if (config.nodeEnv === 'production') {
-  // 정적 파일 제공 미들웨어를 API 라우트 후에 등록
-  app.use(express.static(path.join(__dirname, '../frontend-dist'), {
-    // MIME 타입 문제 해결을 위한 설정
-    setHeaders: (res, filepath) => {
-      if (filepath.endsWith('.css')) {
-        res.setHeader('Content-Type', 'text/css');
-      } else if (filepath.endsWith('.js')) {
-        res.setHeader('Content-Type', 'application/javascript');
-      } else if (filepath.endsWith('.svg')) {
-        res.setHeader('Content-Type', 'image/svg+xml');
-      }
+  app.get('*', (req, res, next) => {
+    // API 요청은 건너뜀
+    if (req.path.startsWith('/api/')) {
+      return next();
     }
-  }));
-
-  // 정적 파일이 존재하지 않을 때의 처리를 위해 별도의 미들웨어 추가
-  app.get(/^(?!\/api\/).*$/, (req, res) => {
-    console.log(`Serving index.html for route: ${req.path}`);
-    res.sendFile(path.join(__dirname, '../frontend-dist/index.html'));
+    
+    const indexPath = path.join(__dirname, '../frontend-dist/index.html');
+    console.log(`📄 Serving index.html for: ${req.path}`);
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        console.error('❌ Error serving index.html:', err);
+        res.status(500).send('Error loading application');
+      }
+    });
   });
 } else {
-  // 개발 환경에서는 기존 API 엔드포인트만 작동
   console.log('Development mode: Frontend static files are not served');
 }
 
