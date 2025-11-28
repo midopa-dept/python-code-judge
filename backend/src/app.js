@@ -71,7 +71,22 @@ if (config.nodeEnv === 'production') {
     } else {
       // React Router를 위한 처리 - API 경로가 아닌 경우 index.html 제공
       console.log(`Serving index.html for route: ${req.path}`);
-      res.sendFile(path.join(__dirname, '../frontend-dist/index.html'));
+      const indexPath = path.join(__dirname, '../frontend-dist/index.html');
+
+      // index.html 파일이 존재하는지 확인 후 제공
+      import('fs').then(fs => {
+        fs.access(indexPath, fs.constants.F_OK, (err) => {
+          if (err) {
+            console.error(`index.html not found at path: ${indexPath}`);
+            res.status(500).json({ error: 'Frontend build files not found' });
+          } else {
+            res.sendFile(indexPath);
+          }
+        });
+      }).catch(err => {
+        console.error('Failed to import fs module:', err);
+        res.status(500).json({ error: 'Server configuration error' });
+      });
     }
   });
 } else {
