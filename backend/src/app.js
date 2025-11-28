@@ -63,8 +63,9 @@ if (config.nodeEnv === 'production') {
   // 정적 파일 제공 미들웨어를 API 라우트 후에 등록
   app.use(express.static(path.join(__dirname, '../frontend-dist')));
 
+  // 정적 파일 제공 미들웨어가 파일을 찾지 못하면 미들웨어 체인 계속 진행
   // 정적 파일이 존재하지 않을 때의 처리를 위해 별도의 미들웨어 추가
-  app.use((req, res, next) => {
+  app.get(/^(?!\/api\/).*$/, async (req, res, next) => {
     console.log(`Static file not found, checking for API route: ${req.path}`);
     if (req.path.startsWith('/api/')) {
       // API 요청은 다음 미들웨어로 전달
@@ -75,7 +76,19 @@ if (config.nodeEnv === 'production') {
       const indexPath = path.join(__dirname, '../frontend-dist/index.html');
 
       // index.html 파일이 존재하는지 확인 후 제공
-      import('fs').then(fs => {
+      try {
+        const fs = await import('fs');
+        const pathModule = await import('path');
+
+        // CSS, JS, 또는 기타 정적 파일인지 확인
+        const ext = pathModule.extname(req.path);
+        if (ext) {
+          // 정적 파일이지만 존재하지 않음 - 404 오류
+          console.log(`Static file not found: ${req.path}`);
+          next(); // 404 핸들러로 전달
+          return;
+        }
+
         fs.access(indexPath, fs.constants.F_OK, (err) => {
           if (err) {
             console.error(`index.html not found at path: ${indexPath}`);
@@ -84,10 +97,10 @@ if (config.nodeEnv === 'production') {
             res.sendFile(indexPath);
           }
         });
-      }).catch(err => {
+      } catch (err) {
         console.error('Failed to import fs module:', err);
         res.status(500).json({ error: 'Server configuration error' });
-      });
+      }
     }
   });
 } else {
