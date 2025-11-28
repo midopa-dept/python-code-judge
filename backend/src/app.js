@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { config } from './config/env.js';
 import { testDatabaseConnection } from './config/database.js';
 
@@ -17,6 +19,10 @@ import sessionRoutes from './modules/sessions/routes/sessionRoutes.js';
 import auditRoutes from './modules/audit/routes/auditRoutes.js';
 import submissionRoutes from './modules/submissions/routes/submissionRoutes.js';
 
+// 현재 파일의 디렉토리 경로를 구함
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 
 // 보안 미들웨어
@@ -29,6 +35,17 @@ app.use(express.urlencoded({ extended: true }));
 
 // 요청 로깅
 app.use(requestLogger);
+
+// 프론트엔드 빌드 파일 제공 (정적 파일)
+// 프로덕션 환경에서만 제공
+if (config.nodeEnv === 'production') {
+  app.use(express.static(path.join(__dirname, '../../frontend/dist')));
+
+  // React Router를 위한 처리 - 존재하지 않는 API 경로가 아닌 경우 index.html 제공
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../../frontend/dist/index.html'));
+  });
+}
 
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
