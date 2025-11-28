@@ -1,19 +1,18 @@
 import request from 'supertest';
 import app from '../../src/app.js';
-import { getPool, closePool } from '../../src/config/database.js';
+import { query, closePool } from '../../src/config/database.js';
 
 describe('인증 API 통합 테스트', () => {
-  let pool;
   let testUserIds = [];
 
   beforeAll(async () => {
-    pool = getPool();
+    // Supabase 클라이언트는 자동으로 초기화됨
   });
 
   afterAll(async () => {
     // 테스트 데이터 정리
     for (const userId of testUserIds) {
-      await pool.query('DELETE FROM users WHERE id = $1', [userId]);
+      await query('DELETE FROM users WHERE id = $1', [userId]);
     }
     await closePool();
   });

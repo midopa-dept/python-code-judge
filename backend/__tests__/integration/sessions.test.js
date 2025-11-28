@@ -1,17 +1,14 @@
 import request from 'supertest';
 import app from '../../src/app.js';
-import { getPool, closePool } from '../../src/config/database.js';
+import { query, closePool } from '../../src/config/database.js';
 
 describe('세션 관리 API 통합 테스트', () => {
-  let pool;
   let adminToken;
   let studentToken;
   let testSessionId;
   let testUserIds = [];
 
   beforeAll(async () => {
-    pool = getPool();
-
     const timestamp = Date.now();
 
     // 관리자 생성
@@ -25,7 +22,7 @@ describe('세션 관리 API 통합 테스트', () => {
     });
     testUserIds.push(parseInt(adminSignup.body.data.user.id));
 
-    await pool.query('UPDATE users SET role = $1 WHERE id = $2', [
+    await query('UPDATE users SET role = $1 WHERE id = $2', [
       'admin',
       adminSignup.body.data.user.id,
     ]);
@@ -57,10 +54,10 @@ describe('세션 관리 API 통합 테스트', () => {
   afterAll(async () => {
     // 테스트 데이터 정리
     if (testSessionId) {
-      await pool.query('DELETE FROM education_sessions WHERE id = $1', [testSessionId]);
+      await query('DELETE FROM education_sessions WHERE id = $1', [testSessionId]);
     }
     for (const userId of testUserIds) {
-      await pool.query('DELETE FROM users WHERE id = $1', [userId]);
+      await query('DELETE FROM users WHERE id = $1', [userId]);
     }
     await closePool();
   });

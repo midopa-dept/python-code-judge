@@ -185,12 +185,20 @@ export const validateAssignProblems = [
     .isInt({ min: 1 })
     .withMessage('유효한 세션 ID를 입력해주세요.'),
 
-  body('problemIds')
+  body('problems')
     .isArray({ min: 1 })
-    .withMessage('문제 ID 배열을 입력해주세요. (최소 1개)')
+    .withMessage('문제 배열을 입력해주세요. (최소 1개)')
     .custom((value) => {
-      if (!value.every((id) => Number.isInteger(id) && id > 0)) {
-        throw new Error('모든 문제 ID는 양의 정수여야 합니다.');
+      if (!value.every((problem) => {
+        return problem &&
+               typeof problem === 'object' &&
+               Number.isInteger(problem.problemId) &&
+               problem.problemId > 0 &&
+               problem.order !== undefined &&
+               Number.isInteger(problem.order) &&
+               problem.order >= 0;
+      })) {
+        throw new Error('각 문제는 { problemId: number, order: number } 형식이어야 합니다.');
       }
       return true;
     }),

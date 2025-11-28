@@ -85,28 +85,6 @@ app.get('/api/health', async (req, res) => {
   });
 });
 
-// API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api', problemRoutes);
-app.use('/api', categoryRoutes);
-app.use('/api/sessions', sessionRoutes);
-app.use('/api/audit-logs', auditRoutes);
-app.use('/api', submissionRoutes);
-
-// Health check endpoint
-app.get('/api/health', async (req, res) => {
-  const dbConnected = await testDatabaseConnection();
-
-  res.status(200).json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    environment: config.nodeEnv,
-    database: dbConnected ? 'connected' : 'disconnected',
-    uptime: process.uptime(),
-  });
-});
-
 // 404 핸들러
 app.use(notFoundHandler);
 

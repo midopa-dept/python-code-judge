@@ -87,14 +87,16 @@ export const createSubmissionService = (deps = {}) => {
   };
 
   const findStudentSessionId = async (client, studentId) => {
-    // 가장 최근 활성 세션 우선, 없으면 가장 최근 참여 세션
+    // 가장 최근 활성 세션 우선, 시험 세션 우선
     const active = await client.query(
       `
       SELECT es.id
       FROM education_sessions es
       JOIN session_students ss ON ss.session_id = es.id
       WHERE ss.student_id = $1 AND es.status = 'active'
-      ORDER BY es.start_time DESC
+      ORDER BY 
+        CASE WHEN es.session_type = 'exam' THEN 1 ELSE 2 END ASC,
+        es.start_time DESC
       LIMIT 1
     `,
       [studentId]
@@ -594,13 +596,13 @@ export const createSubmissionService = (deps = {}) => {
       if (astResult.status !== 'OK') {
         const submissionId = await insertSubmission(client, {
           studentId,
-        problemId: parsedProblemId,
-        sessionId: resolvedSessionId,
-        code,
-        codeSize,
-        status: 'SE',
-        pythonVersion: version,
-        errorMessage: buildAstErrorMessage(astResult),
+          problemId: parsedProblemId,
+          sessionId: resolvedSessionId,
+          code,
+          codeSize,
+          status: 'SE',
+          pythonVersion: version,
+          errorMessage: buildAstErrorMessage(astResult),
         });
 
         await client.query('COMMIT');

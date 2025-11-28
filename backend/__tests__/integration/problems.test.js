@@ -1,10 +1,9 @@
 import request from 'supertest';
 import app from '../../src/app.js';
-import { getPool, closePool } from '../../src/config/database.js';
+import { query, closePool } from '../../src/config/database.js';
 import { PROBLEM_CATEGORIES } from '../../src/shared/utils/validators.js';
 
 describe('문제 관리 API 통합 테스트', () => {
-  let pool;
   let adminToken;
   let studentToken;
   let testProblemId;
@@ -12,8 +11,6 @@ describe('문제 관리 API 통합 테스트', () => {
   let testUserIds = [];
 
   beforeAll(async () => {
-    pool = getPool();
-
     const timestamp = Date.now();
 
     // 관리자 사용자 생성
@@ -28,7 +25,7 @@ describe('문제 관리 API 통합 테스트', () => {
     testUserIds.push(parseInt(adminSignup.body.data.user.id));
 
     // 관리자 권한 부여
-    await pool.query('UPDATE users SET role = $1 WHERE id = $2', [
+    await query('UPDATE users SET role = $1 WHERE id = $2', [
       'admin',
       adminSignup.body.data.user.id,
     ]);
@@ -63,10 +60,10 @@ describe('문제 관리 API 통합 테스트', () => {
   afterAll(async () => {
     // 테스트 데이터 정리
     if (testProblemId) {
-      await pool.query('DELETE FROM problems WHERE id = $1', [testProblemId]);
+      await query('DELETE FROM problems WHERE id = $1', [testProblemId]);
     }
     for (const userId of testUserIds) {
-      await pool.query('DELETE FROM users WHERE id = $1', [userId]);
+      await query('DELETE FROM users WHERE id = $1', [userId]);
     }
     await closePool();
   });
@@ -130,7 +127,7 @@ describe('문제 관리 API 통합 테스트', () => {
   describe('GET /api/problems/:id - 문제 상세 조회', () => {
     test('존재하는 문제 상세 조회 성공 (200)', async () => {
       if (!testProblemId) {
-        const result = await pool.query(
+        const result = await query(
           `INSERT INTO problems (title, description, category, difficulty, time_limit, memory_limit, visibility, created_by)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
           ['상세조회 테스트', '설명', categoryName, 3, 5, 256, 'public', testUserIds[0]]
