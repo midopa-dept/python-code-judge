@@ -139,75 +139,130 @@ const parseAndExecuteQuery = async (client, text, params) => {
   if (trimmedText.startsWith('SELECT')) {
     console.log('⚠️  복잡한 SELECT 쿼리 - 직접 변환 시도:', text.substring(0, 100));
 
-    // JOIN 쿼리 처리
-    if (trimmedText.includes('FROM PROBLEMS P') && (trimmedText.includes('LEFT JOIN') || trimmedText.includes('JOIN'))) {
-      // 문제 목록 조회 쿼리
-      if (trimmedText.includes('P.ID, P.TITLE, P.SCORE, P.CATEGORY, P.DIFFICULTY')) {
-        // 기본 쿼리 파싱
-        const hasWhere = trimmedText.includes('WHERE');
-        const whereClause = hasWhere ? text.match(/WHERE(.*)/i)?.[0] || '' : '';
-        const limitMatch = text.match(/LIMIT\s+(\d+)/i);
-        const offsetMatch = text.match(/OFFSET\s+(\d+)/i);
+    // 문제 목록 쿼리 (JOIN 포함)
+    if (trimmedText.includes('FROM PROBLEMS P') && trimmedText.includes('LEFT JOIN') &&
+        trimmedText.includes('P.ID, P.TITLE, P.SCORE, P.CATEGORY, P.DIFFICULTY')) {
 
-        // WHERE 절에서 파라미터 추출
-        let newParams = [...params];
-        if (hasWhere) {
-          // whereClause에서 파라미터를 추출하고 실제 값으로 치환
-          whereClause.replace(/\$(\d+)/g, (match, num) => {
-            const index = parseInt(num) - 1;
-            if (index < params.length) {
-              newParams.push(params[index]);
+      // 현재 사용자 ID 파라미터 추출
+      const userId = params[params.length - 3] || params[params.length - 1]; // 쿼리에 따라 다를 수 있음
+
+      // 기본 쿼리 실행: 문제 정보 가져오기
+      let queryBuilder = client
+        .from('problems')
+        .select(`
+          id,
+          title,
+          score,
+          category,
+          difficulty,
+          visibility,
+          created_at
+        `)
+        .order('created_at', { ascending: false });
+
+      // 필터 적용 (WHERE 절)
+      if (trimmedText.includes('WHERE')) {
+        const whereClause = text.substring(text.toUpperCase().indexOf('WHERE') + 5);
+
+        // 카테고리 필터
+        if (whereClause.includes('P.CATEGORY')) {
+          const categoryMatch = whereClause.match(/P\.CATEGORY\s*=\s*\$([0-9]+)/i);
+          if (categoryMatch) {
+            const paramIndex = parseInt(categoryMatch[1]) - 1;
+            if (paramIndex < params.length) {
+              queryBuilder = queryBuilder.eq('category', params[paramIndex]);
             }
-          });
-        }
-
-        // 실제 쿼리 실행
-        let { data, error } = await client
-          .from('problems')
-          .select(`
-            id,
-            title,
-            score,
-            category,
-            difficulty,
-            visibility,
-            submissions!inner(status)
-          `)
-          .eq('visibility', 'public') // 학생용은 public만
-          .range(
-            offsetMatch ? parseInt(offsetMatch[1]) : 0,
-            limitMatch ? parseInt(limitMatch[1]) + (offsetMatch ? parseInt(offsetMatch[1]) : 0) - 1 : 19
-          );
-
-        if (error) {
-          console.error('Supabase 쿼리 에러:', error);
-          return { rows: [] };
-        }
-
-        // 결과 처리
-        const groupedData = data.reduce((acc, curr) => {
-          const existing = acc.find(item => item.id === curr.id);
-          if (!existing) {
-            acc.push({
-              ...curr,
-              submission_count: 1,
-              accuracy_rate: 0 // 실제 계산 로직 필요
-            });
-          } else {
-            existing.submission_count += 1;
           }
-          return acc;
-        }, []);
+        }
 
-        return { rows: groupedData };
+        // 난이도 필터
+        if (whereClause.includes('P.DIFFICULTY')) {
+          const difficultyMatch = whereClause.match(/P\.DIFFICULTY\s*=\s*\$([0-9]+)/i);
+          if (difficultyMatch) {
+            const paramIndex = parseInt(difficultyMatch[1]) - 1;
+            if (paramIndex < params.length) {
+              queryBuilder = queryBuilder.eq('difficulty', params[paramIndex]);
+            }
+          }
+        }
+
+        // 검색어 필터
+        if (whereClause.includes('P.TITLE') && whereClause.includes('ILIKE')) {
+          const searchMatch = whereClause.match(/P\.TITLE\s+ILIKE\s+\$([0-9]+)/i);
+          if (searchMatch) {
+            const paramIndex = parseInt(searchMatch[1]) - 1;
+            if (paramIndex < params.length) {
+              const searchTerm = params[paramIndex].replace(/%/g, '');
+              queryBuilder = queryBuilder.ilike('title', `%${searchTerm}%`);
+            }
+          }
+        }
+
+        // 가시성 필터 (학생용)
+        if (trimmedText.includes('P.VISIBILITY = \'public\'')) {
+          queryBuilder = queryBuilder.eq('visibility', 'public');
+        }
       }
+
+      // 페이징 처리
+      const limitMatch = text.match(/LIMIT\s+(\d+)/i);
+      const offsetMatch = text.match(/OFFSET\s+(\d+)/i);
+
+      if (offsetMatch && limitMatch) {
+        const offset = parseInt(offsetMatch[1]);
+        const limit = parseInt(limitMatch[1]);
+        queryBuilder = queryBuilder.range(offset, offset + limit - 1);
+      }
+
+      const { data, error } = await queryBuilder;
+
+      if (error) {
+        console.error('문제 목록 쿼리 에러:', error);
+        return { rows: [] };
+      }
+
+      // 결과에 통계 정보 추가 (기본값)
+      const processedData = data.map(problem => ({
+        ...problem,
+        accuracy_rate: 0, // 실제 계산 로직 필요
+        submission_count: 0, // 실제 제출 수 계산 로직 필요
+        is_solved: false // 실제 해결 여부 확인 로직 필요
+      }));
+
+      return { rows: processedData };
     }
 
     // COUNT 쿼리 특별 처리
     if (trimmedText.includes('COUNT(*)') && trimmedText.includes('FROM PROBLEMS')) {
-      const { count, error } = await client
+      let queryBuilder = client
         .from('problems')
         .select('*', { count: 'exact', head: true });
+
+      // 필터 적용
+      if (trimmedText.includes('WHERE')) {
+        const whereClause = text.substring(text.toUpperCase().indexOf('WHERE') + 5);
+
+        // 가시성 필터
+        if (whereClause.includes('P.VISIBILITY')) {
+          const visibilityMatch = whereClause.match(/P\.VISIBILITY\s*=\s*'([^']+)'/i);
+          if (visibilityMatch) {
+            queryBuilder = queryBuilder.eq('visibility', visibilityMatch[1]);
+          }
+        }
+
+        // 카테고리 필터
+        if (whereClause.includes('P.CATEGORY')) {
+          const categoryMatch = whereClause.match(/P\.CATEGORY\s*=\s*\$([0-9]+)/i);
+          if (categoryMatch) {
+            const paramIndex = parseInt(categoryMatch[1]) - 1;
+            if (paramIndex < params.length) {
+              queryBuilder = queryBuilder.eq('category', params[paramIndex]);
+            }
+          }
+        }
+      }
+
+      const { count, error } = await queryBuilder;
 
       if (error) {
         console.error('COUNT 쿼리 에러:', error);
