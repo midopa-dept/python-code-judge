@@ -80,6 +80,15 @@ export const problemController = {
         judgeConfig,
       } = req.body;
 
+      console.log('문제 생성 요청 수신:', {
+        title,
+        category,
+        difficulty,
+        timeLimit,
+        userId: req.user.id,
+        userName: req.user.name
+      });
+
       // 필수 필드 검증
       if (!title || !description || !category || !difficulty || !timeLimit) {
         throw new ValidationError('필수 필드가 누락되었습니다.');
@@ -120,6 +129,11 @@ export const problemController = {
         req.user.id
       );
 
+      console.log('문제 생성 완료:', {
+        problemId,
+        title
+      });
+
       res.status(201).json({
         success: true,
         data: {
@@ -127,6 +141,7 @@ export const problemController = {
         },
       });
     } catch (error) {
+      console.error('문제 생성 오류:', error);
       next(error);
     }
   },
