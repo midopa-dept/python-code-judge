@@ -1,5 +1,5 @@
 services:
-  # Backend API Server
+  # 백엔드 API 서버
   - type: web
     name: python-judge-backend
     runtime: node
@@ -13,16 +13,16 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        sync: false  # This will be set manually in the Render dashboard
+        sync: false  # Render 대시보드에서 수동으로 설정해야 함
       - key: SUPABASE_URL
-        sync: false  # This will be set manually in the Render dashboard
+        sync: false  # Render 대시보드에서 수동으로 설정해야 함
       - key: SUPABASE_ANON_KEY
-        sync: false  # This will be set manually in the Render dashboard
+        sync: false  # Render 대시보드에서 수동으로 설정해야 함
       - key: SUPABASE_SERVICE_ROLE_KEY
-        sync: false  # This will be set manually in the Render dashboard
+        sync: false  # Render 대시보드에서 수동으로 설정해야 함
       - key: JWT_SECRET
-        sync: false  # This will be set manually in the Render dashboard
+        sync: false  # Render 대시보드에서 수동으로 설정해야 함
       - key: PORT
         value: {{ PORT }}
-    region: oregon  # You can change this to your preferred region
+    region: oregon  # 원하는 지역으로 변경 가능
     healthCheckPath: /api/health
