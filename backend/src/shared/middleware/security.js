@@ -4,41 +4,10 @@ import cors from 'cors';
 import { config } from '../../config/env.js';
 
 /**
- * CORS 설정
+ * CORS 설정 - 모든 origin 허용 (개발용)
  */
 export const corsOptions = {
-  origin: function (origin, callback) {
-    // 프로덕션에서는 특정 도메인만 허용
-    if (process.env.NODE_ENV === 'production') {
-      // Render에서 생성된 도메인 허용
-      const allowedOrigins = [
-        'https://python-judge.render.com', // Render 도메인
-        'https://python-judge-fullstack.onrender.com', // 실제 배포 도메인
-        ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []) // 환경 변수에 설정된 프론트엔드 URL
-      ];
-
-      // origin이 허용된 도메인에 포함되면 허용
-      if (!origin || allowedOrigins.some(allowed => origin.includes(allowed.replace('https://', '')))) {
-        callback(null, true);
-      } else {
-        callback(new Error('CORS policy: Not allowed by CORS'));
-      }
-    } else {
-      // 개발 환경에서는 로컬 프론트엔드 주소와 모든 요청 허용
-      const allowedDevOrigins = [
-        'http://localhost:5173',  // Vite 기본 포트
-        'http://localhost:3000',  // 백엔드 서버
-        'http://127.0.0.1:5173',
-        'http://127.0.0.1:3000'
-      ];
-
-      if (!origin || allowedDevOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(null, true); // 개발 환경에서는 모든 origin 허용 (임시)
-      }
-    }
-  },
+  origin: true, // 모든 origin 허용
   credentials: true,
   optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

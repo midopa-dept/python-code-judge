@@ -10,13 +10,10 @@ COPY backend/package*.json ./
 RUN npm ci --only=production
 
 # Install Python and psutil for judging engine
-RUN apk add --no-cache python3 py3-pip && \
-    python3 -m venv /opt/venv && \
-    . /opt/venv/bin/activate && \
-    pip install psutil
+RUN apk add --no-cache python3 py3-psutil
 
-# Make sure the virtual environment is activated for subsequent commands
-ENV PATH="/opt/venv/bin:$PATH"
+# Python executable path
+ENV PATH="/usr/bin:$PATH"
 
 # Copy the rest of the application code to the container
 COPY backend/ .

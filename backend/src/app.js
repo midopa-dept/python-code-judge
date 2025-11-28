@@ -107,42 +107,9 @@ app.use('/api/sessions', sessionRoutes);
 app.use('/api/audit-logs', auditRoutes);
 app.use('/api', submissionRoutes);
 
-// 프로덕션 환경에서 정적 파일 및 SPA 설정
-if (config.nodeEnv === 'production') {
-  const frontendPath = path.join(__dirname, '../frontend-dist');
-  console.log('📦 Serving static files from:', frontendPath);
-  
-  // 정적 파일 제공 (assets 폴더 등)
-  app.use(express.static(frontendPath, {
-    index: false, // index.html 자동 서빙 비활성화 (SPA fallback에서 처리)
-    setHeaders: (res, filepath) => {
-      console.log('📦 Serving static file:', filepath);
-      if (filepath.endsWith('.css')) {
-        res.setHeader('Content-Type', 'text/css; charset=utf-8');
-      } else if (filepath.endsWith('.js')) {
-        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-      } else if (filepath.endsWith('.svg')) {
-        res.setHeader('Content-Type', 'image/svg+xml');
-      } else if (filepath.endsWith('.html')) {
-        res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      }
-    }
-  }));
-  
-  // SPA fallback - API가 아닌 모든 요청을 index.html로
-  app.get('*', (req, res) => {
-    const indexPath = path.join(__dirname, '../frontend-dist/index.html');
-    console.log(`📄 Serving index.html for: ${req.path}`);
-    res.sendFile(indexPath, (err) => {
-      if (err) {
-        console.error('❌ Error serving index.html:', err);
-        res.status(500).send('Error loading application');
-      }
-    });
-  });
-} else {
-  console.log('Development mode: Frontend static files are not served');
-}
+// 프로덕션 환경: Frontend는 Vercel에서 별도 제공
+// Backend는 API만 제공
+console.log('Backend API server mode (Frontend served separately via Vercel)');
 
 // 404 핸들러
 app.use(notFoundHandler);
