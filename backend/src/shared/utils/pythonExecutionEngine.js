@@ -34,13 +34,6 @@ except Exception as exc:
     print(json.dumps({\"status\": \"RE\", \"stdout\": \"\", \"stderr\": str(exc), \"timeMs\": 0, \"memoryBytes\": 0, \"returnCode\": -1}))
     sys.exit(0)
 
-try:
-    if input_data:
-        proc.stdin.write(input_data)
-    proc.stdin.close()
-except Exception:
-    pass
-
 start_time = time.time()
 peak_memory = 0
 timed_out = False
@@ -50,6 +43,20 @@ try:
     ps_proc = psutil.Process(proc.pid)
 except Exception:
     ps_proc = None
+
+# stdin을 별도 스레드에서 전송
+import threading
+def send_input():
+    try:
+        if input_data:
+            proc.stdin.write(input_data)
+        proc.stdin.close()
+    except Exception:
+        pass
+
+input_thread = threading.Thread(target=send_input)
+input_thread.daemon = True
+input_thread.start()
 
 while True:
     if proc.poll() is not None:
@@ -73,9 +80,11 @@ while True:
         break
     time.sleep(0.01)
 
+# 프로세스가 이미 종료되었으므로 communicate() 대신 직접 읽기
 try:
-    stdout, stderr = proc.communicate(timeout=0.1)
-except subprocess.TimeoutExpired:
+    stdout = proc.stdout.read()
+    stderr = proc.stderr.read()
+except Exception:
     stdout, stderr = '', ''
 
 duration_ms = int((time.time() - start_time) * 1000)
