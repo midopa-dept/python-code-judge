@@ -129,11 +129,11 @@ app.use('/api/sessions', sessionRoutes);
 app.use('/api/audit-logs', auditRoutes);
 app.use('/api', submissionRoutes);
 
-// 프로덕션 환경에서 SPA fallback (모든 non-API 요청을 index.html로)
+// 프로덕션 환경에서 SPA fallback (모든 non-API, non-static 요청을 index.html로)
 if (config.nodeEnv === 'production') {
   app.get('*', (req, res, next) => {
-    // API 요청은 건너뜀
-    if (req.path.startsWith('/api/')) {
+    // API 요청과 정적 파일 요청은 건너뜀
+    if (req.path.startsWith('/api/') || req.path.startsWith('/assets/')) {
       return next();
     }
     
